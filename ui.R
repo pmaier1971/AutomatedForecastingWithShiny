@@ -9,7 +9,7 @@ shinyUI(navbarPage("Automated GDP Forecasting With Shiny",
                                 uiOutput("Macro.Control")
                               ),
                               mainPanel(
-                                HTML("GDP Forecast Using A Simple ARIMA Model"),
+                                HTML("GDP Forecast Using A Simple ARIMA Model (auto.arima in R)"),
                                 plotOutput("Macro.Chart"),
                                 HTML("Regression specification"),
                                 verbatimTextOutput("Macro.Regression")
