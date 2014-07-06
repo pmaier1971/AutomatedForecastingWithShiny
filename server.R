@@ -7,32 +7,32 @@ library(ggplot2)
 
 # misc. functions
 
-misc.funggcast<-function(dn,fcast){ 
-  require(zoo) #needed for the 'as.yearmon()' function
-  
-  en<-max(time(fcast$mean)) #extract the max date used in the forecast
-  
-  #Extract Source and Training Data
-  ds<-as.data.frame(window(dn,end=en))
-  names(ds)<-'observed'
-  ds$date<-as.Date(time(window(dn,end=en)))
-  
-  #Extract the Fitted Values (need to figure out how to grab confidence intervals)
-  dfit<-as.data.frame(fcast$fitted)
-  dfit$date<-as.Date(time(fcast$fitted))
-  names(dfit)[1]<-'fitted'
-  
-  ds<-merge(ds,dfit,all.x=T) #Merge fitted values with source and training data
-  
-  #Exract the Forecast values and confidence intervals
-  dfcastn<-as.data.frame(fcast)
-  dfcastn$date<-as.Date(as.yearmon(row.names(dfcastn)))
-  names(dfcastn)<-c('forecast','lo80','hi80','lo95','hi95','date')
-  
-  pd<-merge(ds,dfcastn,all.x=T) #final data.frame for use in ggplot
-  return(pd)
-  
-}
+# misc.funggcast<-function(dn,fcast){ 
+#   require(zoo) #needed for the 'as.yearmon()' function
+#   
+#   en<-max(time(fcast$mean)) #extract the max date used in the forecast
+#   
+#   #Extract Source and Training Data
+#   ds<-as.data.frame(window(dn,end=en))
+#   names(ds)<-'observed'
+#   ds$date<-as.Date(time(window(dn,end=en)))
+#   
+#   #Extract the Fitted Values (need to figure out how to grab confidence intervals)
+#   dfit<-as.data.frame(fcast$fitted)
+#   dfit$date<-as.Date(time(fcast$fitted))
+#   names(dfit)[1]<-'fitted'
+#   
+#   ds<-merge(ds,dfit,all.x=T) #Merge fitted values with source and training data
+#   
+#   #Exract the Forecast values and confidence intervals
+#   dfcastn<-as.data.frame(fcast)
+#   dfcastn$date<-as.Date(as.yearmon(row.names(dfcastn)))
+#   names(dfcastn)<-c('forecast','lo80','hi80','lo95','hi95','date')
+#   
+#   pd<-merge(ds,dfcastn,all.x=T) #final data.frame for use in ggplot
+#   return(pd)
+#   
+# }
 
 # misc.growth.monthly.to.qq <- function(x){
 #   x <- 400*ln(x / lag(x, 1))
@@ -42,7 +42,7 @@ misc.growth.quarterly.to.qq <- function(x){
   x <- 400*log(x / lag(x, 1))
 }
 
-misc.growth.quarterly.to.qq <- function(x){
+misc.growth.quarterly.to.yy <- function(x){
   x <- 100*log(x / lag(x, 4))
 }
 
@@ -59,9 +59,15 @@ shinyServer(function(input, output) {
   if (inherits(test, "try-error")) load(file="InputData.RData") else {
     rm("GDPC1")
     
-    # Is the data up-to-date?
-    load(file="Last.Update.RData")
+    load(file="InputData.RData")
     
+    # Download the stock market data to ensure that they reflect the latest values
+    for (i in 1:length(List.Tickers)){
+      # getSymbols(List.Tickers[i], src = "google") 
+      getSymbols(List.Tickers[i])
+    }  
+    
+    # Is the data up-to-date? If yes, then don't update it to save time
     if (!(Sys.Date() == Last.Update)) {
     # Data import
     cat("\nDownloading data online....")
@@ -74,7 +80,7 @@ shinyServer(function(input, output) {
     
     # attach(NULL, name="DATA.ENV")
     assign("US.GDP.Real", get(getSymbols("GDPC1",src='FRED')))
-    assign("EU.GDP.Real", get(getSymbols("NAEXKP01EZQ652S",src='FRED')))
+    assign("EU.GDP.Real", get(getSymbols("NAEXKP01EUQ652S",src='FRED')))
     assign("UK.GDP.Real", get(getSymbols("NAEXKP01GBQ652S",src='FRED')))
     assign("CN.GDP.Real", get(getSymbols("CANRGDPQDSNAQ",src='FRED')))
     assign("CA.GDP.Real", get(getSymbols("RGDPNACNA666NRUG",src='FRED')))
@@ -108,11 +114,6 @@ shinyServer(function(input, output) {
     assign("EU.Survey.ConsumerConfidence", get(getSymbols("CSCICP02EZM460S",src='FRED')))
     assign("EU.Survey.ManufacturingConfidence", get(getSymbols("BSCICP02EZM460S",src='FRED')))
     assign("EU.Survey.CapacityUtilization", get(getSymbols("BSCURT02EZQ160S",src='FRED')))
-    
-    for (i in 1:length(List.Tickers)){
-      # getSymbols(List.Tickers[i], src = "google") 
-      getSymbols(List.Tickers[i])
-    }  
     
     cat("\n.... saving a new RData file")
     save(list=ls(), file="InputData.RData")
@@ -180,10 +181,10 @@ shinyServer(function(input, output) {
     
     Data       <- get(paste(Country,".GDP.Real.qq", sep=""))
     Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
-    Commentary <- paste(Commentary, "<li>Real GDP growth in ", format(index(Data[nrow(Data)]), "%B %Y"), 
+    Commentary <- paste(Commentary, "<li>Real GDP growth in ", format(as.yearqtr(index(Data[nrow(Data)])), "Q%q %Y"), 
                         " was ", round(Data[nrow(Data)],1),"%", sep ="")
-    if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-    else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
+    if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from the previous quarter (", round(Data[nrow(Data)-1],1), "%).</li>", sep="")
+    else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous quarter (", round(Data[nrow(Data)-1],1), "%).</li>", sep="")
     else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")
     
     if (exists(paste(Country,".Unemployment", sep=""))) {
@@ -191,9 +192,9 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>Unemployment in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
-      else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")      
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from the previous quarter.</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous quarter.</li>", sep="")
+      else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
     if (exists(paste(Country,".IP", sep=""))) {
@@ -201,8 +202,8 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>Industrial production in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from the previous quarter.</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous quarter.</li>", sep="")
       else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
@@ -211,8 +212,8 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>Headline CPI in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from the previous quarter.</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous quarter.</li>", sep="")
       else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
@@ -221,8 +222,8 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>The 10Y sovereign bond yield in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from the previous quarter.</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous quarter.</li>", sep="")
       else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
@@ -301,5 +302,6 @@ shinyServer(function(input, output) {
     rownames(Stock.Info) <- NULL
     return(Stock.Info)
   })
-  
+
+  output$DateDataUpdate <- renderText({return(paste0("Last data update: ", format(Last.Update, "%d %B %Y")))})
 })
