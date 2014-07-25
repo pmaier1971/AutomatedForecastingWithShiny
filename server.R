@@ -7,33 +7,6 @@ library(ggplot2)
 
 # misc. functions
 
-misc.funggcast<-function(dn,fcast){ 
-  require(zoo) #needed for the 'as.yearmon()' function
-  
-  en<-max(time(fcast$mean)) #extract the max date used in the forecast
-  
-  #Extract Source and Training Data
-  ds<-as.data.frame(window(dn,end=en))
-  names(ds)<-'observed'
-  ds$date<-as.Date(time(window(dn,end=en)))
-  
-  #Extract the Fitted Values (need to figure out how to grab confidence intervals)
-  dfit<-as.data.frame(fcast$fitted)
-  dfit$date<-as.Date(time(fcast$fitted))
-  names(dfit)[1]<-'fitted'
-  
-  ds<-merge(ds,dfit,all.x=T) #Merge fitted values with source and training data
-  
-  #Exract the Forecast values and confidence intervals
-  dfcastn<-as.data.frame(fcast)
-  dfcastn$date<-as.Date(as.yearmon(row.names(dfcastn)))
-  names(dfcastn)<-c('forecast','lo80','hi80','lo95','hi95','date')
-  
-  pd<-merge(ds,dfcastn,all.x=T) #final data.frame for use in ggplot
-  return(pd)
-  
-}
-
 misc.growth.quarterlydata.to.qq.ar <- function(x){
   x <- 400*log(x / lag(x, 1))
 }
@@ -49,12 +22,16 @@ misc.growth.monthlydata.to.yy <- function(x){
 shinyServer(function(input, output) {
   
   # Test whether we are online
-  ListOfCodes <- c("^GSPC", "BAC", "TMUS", "^TNX", "SPY")
-  ListOfCodes <- List.Tickers
+  ListOfCodes <- c("SP500"="^GSPC", 
+                   "UST 10Y"="^TNX", 
+                   "Apple"="AAPL", 
+                   "Bank of America"="BAC", 
+                   "JP Morgan"="JPM", 
+                   "T-Mobile"="TMUS")
   test        <- try(getSymbols("GDPC1",src='FRED'))
-  if (inherits(test, "try-error")) load(file="InputData.RData") else {
-    rm("GDPC1")
-    
+  
+  load(file="InputData.RData")
+  if (!(inherits(test, "try-error"))) {
     # Is the data up-to-date?
     if (Sys.Date() != Last.Update) {
       # Data import
@@ -101,9 +78,6 @@ shinyServer(function(input, output) {
       assign("EU.Survey.ConsumerConfidence", get(getSymbols("CSCICP02EZM460S",src='FRED')))
       assign("EU.Survey.ManufacturingConfidence", get(getSymbols("BSCICP02EZM460S",src='FRED')))
       assign("EU.Survey.CapacityUtilization", get(getSymbols("BSCURT02EZQ160S",src='FRED')))
-      
-      
-      
       
       for (i in 1:length(ListOfCodes)){
         # getSymbols(ListOfCodes[i], src = "google") 
@@ -253,22 +227,9 @@ shinyServer(function(input, output) {
   })
   
   Regression.Output <- reactive({
-    # Country <- input$Macro.Control.Choice
-    #     if (input$RegressionXREGControlChoice & Country == "EU"){
-    #       GDP        <- get(paste(Country,".GDP.qq", sep=""))
-    #       GDP        <- tail(GDP, 60) # Last 15 obs.
-    #       GDP.Sample <- index(GDP)
-    #       FC.xreg    <- FX.USDEUR
-    #       aggregate(FC.xreg, GDP.Sample, mean)
-    #       GDP.FC     <- auto.arima(GDP)
-    #     } else {
-    # Data      <- get(paste(Country,".GDP.qq", sep=""))
     if (grepl("GDP", input$Variable.Control.Choice)) Data       <- get(paste(input$Variable.Control.Choice, ".qq", sep=""))
     else Data       <- get(input$Variable.Control.Choice)
-    
-    
     Regression  <- auto.arima(Data)
-    #     }
     return(Regression)
   })
   
@@ -287,27 +248,27 @@ shinyServer(function(input, output) {
   
   
   output$Data.Realtime <- renderTable({
-    data <- getQuote(List.Tickers)
-    #data$Trade.Time <- as.Date(data$Trade.Time)
-    #    data <- data.frame(Ticker = rownames(data), data)
-    #   stock <- subset(data, Ticker == input$StockSelectorChoice, select = Last)
+    data <- getQuote(ListOfCodes)
+    data <- data.frame((names(ListOfCodes)), data)
+    rownames(data) <- NULL
+    colnames(data)[1]<-" "
     return(data)
   })
   
   output$StockSelector <- renderUI({
-    selectInput("StockSelectorChoice", "Select a stock", List.Tickers)
+    selectInput("StockSelectorChoice", "Select a stock", names(ListOfCodes))
   })
   
   output$TestPlot <- renderPlot({
     Stock.Selected <- input$StockSelectorChoice
-    Stock.Selected <- get(gsub("\\^", "",Stock.Selected))
-    plot(Stock.Selected)
+    Stock.Selected <- get(gsub("\\^", "", ListOfCodes[grep(Stock.Selected, names(ListOfCodes))]))
+    plot(Stock.Selected, main=input$StockSelectorChoice)
     
   })
   
   output$LatestValue <- renderTable({
     Stock.Selected <- input$StockSelectorChoice
-    Stock.Selected <- get(gsub("\\^", "",Stock.Selected))
+    Stock.Selected <- get(gsub("\\^", "", ListOfCodes[grep(Stock.Selected, names(ListOfCodes))]))
     Stock.Value    <- tail(Stock.Selected, 10)
     Stock.Info     <- data.frame(Period = as.character(index(Stock.Value)), Closing = Stock.Value[,4],
                                  Volume = Stock.Value[,5])
