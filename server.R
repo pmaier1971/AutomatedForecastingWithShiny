@@ -84,7 +84,6 @@ shinyServer(function(input, output) {
       assign("CA.CPI.Headline", misc.growth.monthlydata.to.yy(get(getSymbols("CANCPIALLMINMEI",src='FRED'))))
       assign("CA.CPI.Core",     misc.growth.monthlydata.to.yy(get(getSymbols("CANCPICORMINMEI",src='FRED'))))
       assign("EU.CPI.Headline", misc.growth.monthlydata.to.yy(get(getSymbols("CP0000EZ17M086NEST",src='FRED'))))
-      assign("EU.CPI.Headline2", misc.growth.monthlydata.to.yy(get(getSymbols("CPHPTT01EZM661N",src='FRED'))))
       assign("EU.CPI.Core",    misc.growth.monthlydata.to.yy(get(getSymbols("CPHPLA01EZM661N",src='FRED'))))
       
       assign("US.IP", misc.growth.monthlydata.to.yy(get(getSymbols("INDPRO",src='FRED'))))
