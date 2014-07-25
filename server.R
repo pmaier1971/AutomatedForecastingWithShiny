@@ -221,6 +221,7 @@ shinyServer(function(input, output) {
   
   output$UI.Variable.Control <- renderUI({
     Choices <- List.Variables[grep(paste(input$Macro.Control.Choice, ".", sep=""), List.Variables, fixed=TRUE)]
+    Choices <- Choices[!grepl(".qq", Choices)] 
     selectInput("Variable.Control.Choice", 
                 paste("Select the variable for country", input$Macro.Control.Choice), 
                 Choices)#, selected=Choices[1])
