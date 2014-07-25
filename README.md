@@ -1,6 +1,6 @@
 Automated Forecasting With R/shiny
 -----------------------------------
-v. 0.2
+v. 0.21
 
 This project is still in a very early stage. It was developed as I was attempting to set up an automated tool to pull macroeconomic data, have it refresh periodically, visualize it, and do some simple forecasting. All is done with R/RStudio/shiny.
 
