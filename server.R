@@ -34,10 +34,6 @@ misc.funggcast<-function(dn,fcast){
   
 }
 
-# misc.growth.monthly.to.qq <- function(x){
-#   x <- 400*ln(x / lag(x, 1))
-# }
-
 misc.growth.quarterlydata.to.qq.ar <- function(x){
   x <- 400*log(x / lag(x, 1))
 }
@@ -196,7 +192,7 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),2)
       Commentary <- paste(Commentary, "<li>Unemployment in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
       else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
       else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
@@ -206,9 +202,9 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>Industrial production in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
-      else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")      
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
+      else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
     if (exists(paste(Country,".CPI.Headline", sep=""))) {
@@ -216,9 +212,9 @@ shinyServer(function(input, output) {
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
       Commentary <- paste(Commentary, "<li>Headline CPI in ", format(index(Data[nrow(Data)]), "%B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
-      else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")      
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from ", format(index(Data[nrow(Data)-1]), "%B"),".</li>", sep="")
+      else                 Commentary <-paste(Commentary, " (unchanged).</li>", sep="")      
     }    
     
     if (exists(paste(Country,".SOV.10Y", sep=""))) {
