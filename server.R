@@ -4,6 +4,14 @@ library(quantmod)
 library(zoo)
 library(forecast)
 library(ggplot2)
+library(lubridate)
+library(Quandl)
+
+# Quandl authentication
+Quandl.auth("TXsxs3bxMNdjGEPKiqFh")
+
+#Quandl("BUNDESBANK/ESA_Q_I6_Y_0000_B1QG00_1000_TTTT_L_U_P", collapse="quarterly")
+
 
 # misc. functions
 
@@ -19,10 +27,11 @@ misc.growth.monthlydata.to.yy <- function(x){
   x <- 100*log(x / lag(x, 12))
 }
 
+
 shinyServer(function(input, output) {
   
   # Test whether we are online
-  ListOfCodes <- c("SP500"="^GSPC", 
+  ListOfCodes <- c("SP 500"="^GSPC", 
                    "UST 10Y"="^TNX", 
                    "Apple"="AAPL", 
                    "Bank of America"="BAC", 
@@ -36,51 +45,46 @@ shinyServer(function(input, output) {
     if (Sys.Date() != Last.Update) {
       # Data import
       cat("\nDownloading data online....")
-      misc.Import.Series <- function(Identifier, series.name, src="FRED"){
-        cat(paste("\n    >>> ", series.name))
-        getSymbols(series.name,src='FRED') #, env=as.environment("DATA.ENV"))
-        assign(Identifier, get(series.name))
-        return(Identifier)
+      
+      Data.US <- c("US.GDP.Real"="GDPC1", "US.Survey.PMI.M"="NAPM", "US.Survey.Empire"="GACDINA066MNFRBNY", 
+                   "US.IP"= "INDPRO", "US.Claims"="IC4WSA", "US.Payroll"="PAYEMS",
+                   "US.Unemployment"="UNRATE", "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
+                   "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI"
+                   )      
+      Data.EU <- c("EU.GDP.Real"="EUNGDP", "EU.Unemployment"="LRHUTTTTEZM156S",
+                   "EU.CPI.Headline"="CP0000EZ17M086NEST", "EU.CPI.Core"="CPHPLA01EZM661N",
+                   "EU.SOV.10Y"="IRLTLT01EZM156N", "FX.EU.USD"="DEXUSEU", "FX.EU.Effective"="RBXMBIS",
+                   "EU.Survey.ConsumerConfidence.Expectations"="CSESFT02EZM460S",
+                   "EU.Survey.ConsumerConfidence"="CSCICP02EZM460S",
+                   "EU.Survey.ManufacturingConfidence"="BSCICP02EZM460S",
+                   "EU.Survey.CapacityUtilization"="BSCURT02EZQ160S")
+      Data.UK <- c("UK.GDP.Real"="UKNGDP", "UK.CPI.Headline"="CPALTT01GBQ657N", "UK.CPI.Core"="GBRCPICORMINMEI",
+                   "UK.Unemployment"="LMUNRRTTGBM156S", "FX.UK.USD"="DEXUSUK")
+      Data.CA <- c("CA.GDP.Real"="NAEXKP01CAQ189S", "CA.CPI.Headline"="CANCPIALLMINMEI", 
+                   "CA.CPI.Core"="CANCPICORMINMEI", "FX.CA.USD"="EXCAUS", "FX.CA.Effective"="RBCABIS")
+      
+      List.Countries <- c("Data.US", "Data.EU", "Data.UK", "Data.CA")
+      
+      # Assign names
+      # Transformation needed
+      List.Transformation <- c("US.CPI", "EU.CPI", "US.IP", "CA.IP")
+      
+      for (idx.Country in 1:length(List.Countries)){
+        cat("\n   Country: ", List.Countries[idx.Country])
+        getSymbols(get(List.Countries[idx.Country]), src="FRED")
+        for (idx in 1:length(get(List.Countries[idx.Country]))){
+          cat("\n      - ", names(get(List.Countries[idx.Country]))[idx])
+          x <- get(get(List.Countries[idx.Country])[idx])
+          if (names(get(List.Countries[idx.Country]))[idx] %in% List.Transformation){
+            x <- misc.growth.monthlydata.to.yy(x)
+          }
+          assign(names(get(List.Countries[idx.Country]))[idx], x)
+          
+            
+        }
       }
       
-      # attach(NULL, name="DATA.ENV")
-      assign("US.GDP.Real", get(getSymbols("GDPC1",src='FRED')))
-      assign("EU.GDP.Real", get(getSymbols("NAEXKP01EZQ652S",src='FRED')))
-      assign("UK.GDP.Real", get(getSymbols("UKNGDP",src='FRED')))
-      #assign("CN.GDP.Real", get(getSymbols("NAEXKP01CNA652S",src='FRED')))
-      assign("CA.GDP.Real", get(getSymbols("NAEXKP01CAQ189S",src='FRED')))
-      
-      assign("US.Claims",  get(getSymbols("IC4WSA",src='FRED')))
-      assign("US.Payroll", get(getSymbols("PAYEMS",src='FRED')))
-      
-      assign("US.Unemployment", get(getSymbols("UNRATE",src='FRED')))
-      assign("EU.Unemployment", get(getSymbols("LRHUTTTTEZM156S",src='FRED')))
-      
-      assign("US.CPI.Headline", misc.growth.monthlydata.to.yy(get(getSymbols("CPIAUCSL",src='FRED'))))
-      assign("US.CPI.Core",     misc.growth.monthlydata.to.yy(get(getSymbols("CPILFESL",src='FRED'))))
-      assign("CA.CPI.Headline", misc.growth.monthlydata.to.yy(get(getSymbols("CANCPIALLMINMEI",src='FRED'))))
-      assign("CA.CPI.Core",     misc.growth.monthlydata.to.yy(get(getSymbols("CANCPICORMINMEI",src='FRED'))))
-      assign("EU.CPI.Headline", misc.growth.monthlydata.to.yy(get(getSymbols("CP0000EZ17M086NEST",src='FRED'))))
-      assign("EU.CPI.Core",    misc.growth.monthlydata.to.yy(get(getSymbols("CPHPLA01EZM661N",src='FRED'))))
-      
-      assign("US.IP", misc.growth.monthlydata.to.yy(get(getSymbols("INDPRO",src='FRED'))))
-      
-      assign("US.SOV.10Y", get(getSymbols("DGS10",src='FRED')))
-      assign("EU.SOV.10Y", get(getSymbols("IRLTLT01EZM156N",src='FRED')))
-      
-      assign("FX.EU.USD", get(getSymbols("DEXUSEU",src='FRED')))
-      assign("FX.EU.Effective", get(getSymbols("RBXMBIS",src='FRED')))
-      assign("FX.CA.USD", get(getSymbols("EXCAUS",src='FRED')))
-      assign("FX.CA.Effective", get(getSymbols("RBCABIS",src='FRED')))
-      
-      assign("US.Survey.Empire", get(getSymbols("GACDINA066MNFRBNY",src='FRED')))
-      assign("EU.Survey.ConsumerConfidence.Expectations", get(getSymbols("CSESFT02EZM460S",src='FRED')))
-      assign("EU.Survey.ConsumerConfidence", get(getSymbols("CSCICP02EZM460S",src='FRED')))
-      assign("EU.Survey.ManufacturingConfidence", get(getSymbols("BSCICP02EZM460S",src='FRED')))
-      assign("EU.Survey.CapacityUtilization", get(getSymbols("BSCURT02EZQ160S",src='FRED')))
-      
       for (i in 1:length(ListOfCodes)){
-        # getSymbols(ListOfCodes[i], src = "google") 
         getSymbols(ListOfCodes[i])
       }  
       
@@ -92,7 +96,7 @@ shinyServer(function(input, output) {
         Country     <- List.Countries[i]
         Data.Name   <- paste(Country,".GDP.Real.qq", sep="")
         FC.Name     <- paste(Country,".GDP.qq.FC.Naive", sep="")
-        Chart.Name  <- paste(Country,".GDP.qq.FC..Naive.chart", sep="")
+        Chart.Name  <- paste(Country,".GDP.qq.FC.Naive.chart", sep="")
         
         Data.Series <- get(paste(Country, ".GDP.Real", sep=""))
         Data.Series <- tail(Data.Series, 60) # Last 15 years
@@ -115,12 +119,28 @@ shinyServer(function(input, output) {
   output$Overview.Charts <-renderPlot({
     par(mfrow=c(2,3))
     for (i in 1:length(List.Countries)){
-      FC.Name     <- paste(Country,".GDP.qq.FC.Naive", sep="")
+      History     <- get(paste0(List.Countries[i],".GDP.Real.qq"))
+      FC.Name     <- paste0(List.Countries[i],".GDP.qq.FC.Naive")
       FC.Data     <- forecast(get(FC.Name), h=4)
-      FC <- data.frame(Period = Sys.Date(),
-                       FC.Data$mean)
       
-      plot(FC.Data, main = List.Countries[i])
+      Chart.Data  <- zoo(, seq(from = index(History[1]), to = index(tail(History,1)) + months(12),
+                               by = "3 months"))
+      Chart.Data  <- merge(Chart.Data, zoo(data.frame(History = FC.Data$x, Fitted = FC.Data$fitted),
+                                           as.Date(index(History))))
+ 
+      Chart.Data  <- merge(Chart.Data, zoo(data.frame(FC.Data),
+                                           seq(from = index(tail(History,1))+months(3), to = index(tail(History,1)) + months(12),
+                                               by = "3 months")))
+      Chart.Data[length(History),3] <- Chart.Data[length(History),1]
+      Chart.Data <- Chart.Data[index(Chart.Data) > Sys.Date()-years(5),]
+      
+      plot(Chart.Data[,1], type="l", col="blue", main = List.Countries[i], ylab="", 
+           lwd=2, ylim=range(Chart.Data[,4:7], na.rm = TRUE))  
+      lines(Chart.Data[,2], col="red", lty=2)
+      segments(index(Chart.Data), Chart.Data[,6], index(Chart.Data), Chart.Data[,7], col="deepskyblue", lwd=10)
+      segments(index(Chart.Data), Chart.Data[,4], index(Chart.Data), Chart.Data[,5], col="tomato", lwd=15)
+      lines(Chart.Data[,3], col="blue", lwd=1.5, pch=19, type="b")
+      lines(Chart.Data[,3], col="blue", lwd=2, pch=19)
     }
     par(mfrow=c(1,1))    
   })
@@ -227,23 +247,105 @@ shinyServer(function(input, output) {
                 Choices)#, selected=Choices[1])
   })
   
+  Regression.Data   <- reactive({
+    if (grepl("GDP", input$Variable.Control.Choice)) R.Data <- get(paste(input$Variable.Control.Choice, ".qq", sep=""))
+    else R.Data <- get(input$Variable.Control.Choice)
+    return(R.Data)
+  })
+  
   Regression.Output <- reactive({
-    if (grepl("GDP", input$Variable.Control.Choice)) Data       <- get(paste(input$Variable.Control.Choice, ".qq", sep=""))
-    else Data       <- get(input$Variable.Control.Choice)
-    Regression  <- auto.arima(Data)
+    Date.Frequency    <- index(Regression.Data())[length(Regression.Data())] - index(Regression.Data())[length(Regression.Data())-1]
+    Regression       <- list()
+    Regression[[1]]  <- auto.arima(Regression.Data())
+    #     Regression[[2]]  <- ets(Regression.Data())
+    #     Regression[[3]]  <- HoltWinters(ts(Regression.Data(), frequency=Date.Frequency))
     return(Regression)
   })
   
   output$Macro.Regression <- renderPrint({
-    return(summary(Regression.Output()))
+    return(summary(Regression.Output()[[1]]))
+  })
+  
+  output$Macro.Regression.Commentary <- renderText({
+    
+    Forecast          <- forecast(Regression.Output()[[1]], h=4)
+    Date.Start        <- index(Regression.Data())[length(Regression.Data())]
+    Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
+    if (Date.Frequency > 85) {
+      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
+      Date.Start      <- format(as.yearqtr(Date.Start), "Q%q %Y")
+      Forecast.Period <- format(as.yearqtr(Forecast.index[1]), "Q%q %Y")
+    } else if (Date.Frequency > 27) {
+      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="1 month")
+      Date.Start      <- format(Date.Start, "%B %Y")
+      Forecast.Period <- format(Forecast.index[1], "%B %Y")
+    }else if (Date.Frequency > 6) {
+      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="1 week")
+      Date.Start      <- format(Date.Start, "%d %B %Y")
+      Forecast.Period <- format(Forecast.index[1], "%d %B %Y")
+    }
+    
+    Commentary <- ("<ul><li>")
+    Commentary <- paste0(Commentary, "The latest observation for ", Date.Start)
+    Commentary <- paste0(Commentary, " was ", round(tail(Regression.Data(),1),2), ".")
+    Commentary <- paste0(Commentary, "<li>A simple ARIMA/XARIMA model with optimal lag selection - as shown below - would forecasts ")
+    Commentary <- paste0(Commentary, round(Forecast$mean[1],2)," for ", Forecast.Period, ".</li></ul>")
+    return(Commentary)
   })
   
   output$Macro.Chart <- renderPlot({
-    Forecast <-forecast(Regression.Output(), h=4)
-    plot(Forecast, col="tomato", main = paste("Forecasting ", input$Variable.Control.Choice, 
-                                              "\nModel: ", Forecast$method, sep=""))
+    #par(mfrow=c(2,2))
+    
+    for (idx.model in 1:length(Regression.Output())){
+      cat("\n       - Model ", idx.model)
+      #Forecast          <- forecast(Regression.Output()[[idx.model]], h=4)
+      
+      Forecast = try(forecast(Regression.Output()[[idx.model]], h=4), silent=TRUE)
+      if (class(Forecast)[1] != 'try-error') {
+        
+        
+      Date.Start        <- index(Regression.Data())[length(Regression.Data())]
+      Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
+      if (Date.Frequency > 85) {
+        Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
+      } else if (Date.Frequency > 27) {
+        Forecast.index  <- seq(Date.Start + months(1), Date.Start + months(4), by="1 month")
+      }else if (Date.Frequency < 7) {
+        Forecast.index  <- seq(Date.Start + 7, Date.Start + weeks(4), by="1 week")
+      }
+      Forecast.df <- data.frame(Forecast)
+      Chart.Data  <- data.frame(Period = index(Regression.Data()),
+                                Regression.Data(),
+                                Regression.Data(),
+                                Regression.Data(),
+                                Regression.Data(),
+                                Regression.Data())
+      names(Chart.Data) <- c("Period", "Mean", "High", "Low", "Upper", "Lower")
+      Chart.Data  <- rbind(Chart.Data, data.frame(Period = Forecast.index,
+                                                  Mean = Forecast.df[,1],
+                                                  High = Forecast.df[,2],
+                                                  Low = Forecast.df[,3],
+                                                  Upper = Forecast.df[,4],
+                                                  Lower = Forecast.df[,5]))
+      Plot.Data <- xts(Chart.Data[,-1], Chart.Data[,1])
+      plot(Plot.Data$Mean)
+      lines(Plot.Data$High, col="blue")
+      lines(Plot.Data$Low, col="blue")
+      lines(Plot.Data$Upper, col="tomato")
+      lines(Plot.Data$Lower, col="tomato")
+      #     plot(Forecast, col="tomato", main = paste("Forecasting ", input$Variable.Control.Choice, 
+      #                                               "\nModel: ", Forecast$method, sep=""), xaxt="n")
+      #lines(Forecast$fitted)
+      } else
+        plot(predict(Regression.Output()[[idx.model]], h=4))
+    }
+    #par(mfrow=c(1,1))
   })
   
+  output$UI.Date <- renderText({
+    Commentary.Date <- paste0("Last Data Update: ", format(Last.Update, "%d %B %Y"))
+    return(Commentary.Date)
+  })
   
   # --------- STOCK MARKET
   

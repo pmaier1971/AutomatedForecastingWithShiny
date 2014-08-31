@@ -2,12 +2,13 @@
 library(shiny)
 
 shinyUI(fluidPage(theme = "bootstrap3.css",
-  navbarPage("Macroeconomic Analysis with shiny",
-                   tabPanel("Dashboard",
+  navbarPage("Economic Dashboard",
+                   tabPanel("Overview",
                             HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters."),
-                            plotOutput("Overview.Charts")
+                            plotOutput("Overview.Charts"),
+                            htmlOutput("UI.Date")
                    ),
-                   tabPanel("Country Overview",
+                   tabPanel("Country View",
                             sidebarLayout(
                               sidebarPanel(
                                 uiOutput("UI.Country.Analysis"),
@@ -28,9 +29,13 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                               ),
                               mainPanel(
                                 HTML("<h3>Forecasting using ARIMA/XARIMA models</h3>"),
+                                htmlOutput("Macro.Regression.Commentary"),
                                 plotOutput("Macro.Chart"),
                                 HTML("Regression specification"),
-                                verbatimTextOutput("Macro.Regression")
+                                checkboxInput("UIRegressionSpecControl", "Show Regression Output", value=FALSE),
+                                conditionalPanel(condition = "input.UIRegressionSpecControl",
+                                                 verbatimTextOutput("Macro.Regression")
+                                )
                               )
                             )
                    ),
