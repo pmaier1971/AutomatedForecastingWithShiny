@@ -6,6 +6,7 @@ library(forecast)
 library(ggplot2)
 library(lubridate)
 library(Quandl)
+library(shinyIncubator)
 
 # Quandl authentication
 Quandl.auth("TXsxs3bxMNdjGEPKiqFh")
@@ -28,7 +29,7 @@ misc.growth.monthlydata.to.yy <- function(x){
 }
 
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   # Test whether we are online
   ListOfCodes <- c("SP 500"="^GSPC", 
@@ -37,6 +38,9 @@ shinyServer(function(input, output) {
                    "Bank of America"="BAC", 
                    "JP Morgan"="JPM", 
                    "T-Mobile"="TMUS")
+  
+  ListofQuandlCodes <- c()
+  
   test        <- try(getSymbols("GDPC1",src='FRED'))
   
   load(file="InputData.RData")
@@ -48,7 +52,15 @@ shinyServer(function(input, output) {
       
       Data.US <- c("US.GDP.Real"="GDPC1", "US.Survey.PMI.M"="NAPM", "US.Survey.Empire"="GACDINA066MNFRBNY", 
                    "US.IP"= "INDPRO", "US.Claims"="IC4WSA", "US.Payroll"="PAYEMS",
-                   "US.Unemployment"="UNRATE", "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
+                   "US.Unemployment"="UNRATE", "US.Unemployment.U6" = "U6RATE",
+                   "US.Unemployment.PartTimeEconomicReasons" = "LNS12032194",
+                   "US.Unemployment.MarginallyAttached" = "LNU05026642",
+                   "US.Unemployment.ParticipationRate"="CIVPART",
+                   "US.JOLTS.QuitsRate" = "JTSQUR",
+                   "US.JOLTS.HireRate" = "JTSHIR",
+                   "US.JOLTS.JobOpeningsRate" ="JTSJOR",
+                   "US.Unemployment.WageGrowth" = "CES0500000003",
+                   "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
                    "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI"
                    )      
       Data.EU <- c("EU.GDP.Real"="EUNGDP", "EU.Unemployment"="LRHUTTTTEZM156S",
@@ -69,7 +81,11 @@ shinyServer(function(input, output) {
       # Transformation needed
       List.Transformation <- c("US.CPI", "EU.CPI", "US.IP", "CA.IP")
       
+      # withProgress(session, min = 1, max = length(List.Countries), {
+      #  setProgress(message = "Downloading Data")
       for (idx.Country in 1:length(List.Countries)){
+        #setProgress(value = idx.Country)
+        #setProgress(detail = "Sorry, this is taking a while")
         cat("\n   Country: ", List.Countries[idx.Country])
         getSymbols(get(List.Countries[idx.Country]), src="FRED")
         for (idx in 1:length(get(List.Countries[idx.Country]))){
@@ -79,10 +95,9 @@ shinyServer(function(input, output) {
             x <- misc.growth.monthlydata.to.yy(x)
           }
           assign(names(get(List.Countries[idx.Country]))[idx], x)
-          
-            
         }
       }
+      #  })
       
       for (i in 1:length(ListOfCodes)){
         getSymbols(ListOfCodes[i])
@@ -230,6 +245,56 @@ shinyServer(function(input, output) {
       else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")      
     }        
     return(Commentary)
+  })
+  
+  # Panel Detailed Analysis
+  # Panel US Labor Market
+  
+  US.LaborMarket.Dashboard.Data <- function(){
+    Data.Dashboard <- Reduce(function(...) merge(...), list(US.Unemployment, US.Unemployment.U6,
+                                                            US.Unemployment.PartTimeEconomicReasons,
+                                                            US.Unemployment.MarginallyAttached,
+                                                            US.Unemployment.ParticipationRate,
+                                                            US.Unemployment.WageGrowth,
+                                                            #US.Payroll,
+                                                            US.JOLTS.QuitsRate,
+                                                            US.JOLTS.HireRate
+                                                            #,US.JOLTS.JobOpeningsRate,
+                                                            ))
+    #Data.Dashboard$CIVPART       <- Data.Dashboard$CIVPART/lag(Data.Dashboard$CIVPART, 12) -1
+    Data.Dashboard$CES0500000003 <- 100*(Data.Dashboard$CES0500000003/lag(Data.Dashboard$CES0500000003, 12) -1)
+    Data.Dashboard               <- Data.Dashboard[index(Data.Dashboard)>"1999-12-01",]
+    return(Data.Dashboard)
+  }
+  
+  output$US.LaborMarket.Dashboard <- renderPlot({
+    Data <- as.zoo(US.LaborMarket.Dashboard.Data())
+    Data.PostCrisis <- Data[index(Data)>"2007-12-01",]
+    
+    Chart.Layout <- matrix(c(1,1,2, 3,3,4,
+                           5,5,6, 7,7,8,
+                           9,9,10, 11,11,12,
+                           13,13,14, 15,15,16
+                           #,17,17,18, 19,19,20
+                           ), ncol=6, byrow=TRUE)
+    layout(Chart.Layout)
+    op <- par(mar = par("mar")/1.2)                     
+    
+    for (idx in 1:ncol(Data)) {
+      Chart.Title <- names(Data)[idx]
+      Chart.Title <- names(Data.US)[grep(Chart.Title, Data.US)]
+      plot(Data[,idx], col="blue", type="l", main=Chart.Title, ylab="", xlab="")
+      Data.Bar    <- c(max(Data.PostCrisis[,idx], na.rm = TRUE), tail(na.omit(Data.PostCrisis[,idx]),1),
+                       min(Data.PostCrisis[,idx], na.rm = TRUE))
+      Data.Line   <- matrix(c(0,Data.Bar[1],0,0), nrow=2)
+      plot(NA, ylim=c(-0.5, 0.5), xlim=c(max(Data.Bar),min(Data.Bar)), main="Latest obs. vs. cycle-trough", 
+           yaxt="n", ylab="")
+      lines(Data.Line, col="blue", lwd=5)
+      points(Data.Bar[2],0, col="red", pch=19, cex=2)
+    }
+    par(op)
+    #par(mfrow=c(1,1))
+    
   })
   
   # Panel Macroeconomic Forecasting

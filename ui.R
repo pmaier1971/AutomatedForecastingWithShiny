@@ -2,56 +2,63 @@
 library(shiny)
 
 shinyUI(fluidPage(theme = "bootstrap3.css",
-  navbarPage("Economic Dashboard",
-                   tabPanel("Overview",
-                            HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters."),
-                            plotOutput("Overview.Charts"),
-                            htmlOutput("UI.Date")
-                   ),
-                   tabPanel("Country View",
-                            sidebarLayout(
-                              sidebarPanel(
-                                uiOutput("UI.Country.Analysis"),
-                                htmlOutput("Commentary.Country.Analysis")
-                              ),
-                              mainPanel(
-                                HTML("<h3>Latest developments</h3>"),
-                                plotOutput("Charts.Country.Analysis")
-                              )
-                            )
-                   ),
-                   tabPanel("Macroeconomic Forecasts",
-                            sidebarLayout(
-                              sidebarPanel(
-                                uiOutput("UI.Macro.Control"),
-                                uiOutput("UI.Variable.Control")
-                                #checkboxInput("RegressionXREGControlChoice", "Add additional regressors", FALSE)
-                              ),
-                              mainPanel(
-                                HTML("<h3>Forecasting using ARIMA/XARIMA models</h3>"),
-                                htmlOutput("Macro.Regression.Commentary"),
-                                plotOutput("Macro.Chart"),
-                                HTML("Regression specification"),
-                                checkboxInput("UIRegressionSpecControl", "Show Regression Output", value=FALSE),
-                                conditionalPanel(condition = "input.UIRegressionSpecControl",
-                                                 verbatimTextOutput("Macro.Regression")
-                                )
-                              )
-                            )
-                   ),
-                   navbarMenu("Stock Market",
-                              tabPanel("Real-Time Data",
-                                       tableOutput("Data.Realtime")
-                              ),
-                              tabPanel("Historical Data",
-                                       sidebarLayout(
-                                         sidebarPanel(
-                                           uiOutput("StockSelector")
-                                         ),
-                                         mainPanel(
-                                           plotOutput("TestPlot"),
-                                           
-                                           tableOutput("LatestValue")
+                  navbarPage("Economic Dashboard",
+                             tabPanel("Overview",
+                                      HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters."),
+                                      plotOutput("Overview.Charts"),
+                                      htmlOutput("UI.Date")
+                             ),
+                             tabPanel("Country View",
+                                      sidebarLayout(
+                                        sidebarPanel(
+                                          uiOutput("UI.Country.Analysis"),
+                                          htmlOutput("Commentary.Country.Analysis")
+                                        ),
+                                        mainPanel(
+                                          HTML("<h3>Latest developments</h3>"),
+                                          plotOutput("Charts.Country.Analysis")
+                                        )
+                                      )
+                             ),
+                             navbarMenu("Detailed Analysis",           
+                                        tabPanel("US Labor Market",
+                                                 h3("US Labor Market Indicators: Current Values, Relative to the Cycle"),
+                                                 h5("Cycle is defined as starting in 2008"),
+                                                 plotOutput("US.LaborMarket.Dashboard")
+                                        )
+                             ),
+                             tabPanel("Macroeconomic Forecasts",
+                                      sidebarLayout(
+                                        sidebarPanel(
+                                          uiOutput("UI.Macro.Control"),
+                                          uiOutput("UI.Variable.Control")
+                                          #checkboxInput("RegressionXREGControlChoice", "Add additional regressors", FALSE)
+                                        ),
+                                        mainPanel(
+                                          HTML("<h3>Forecasting using ARIMA/XARIMA models</h3>"),
+                                          htmlOutput("Macro.Regression.Commentary"),
+                                          plotOutput("Macro.Chart"),
+                                          HTML("Regression specification"),
+                                          checkboxInput("UIRegressionSpecControl", "Show Regression Output", value=FALSE),
+                                          conditionalPanel(condition = "input.UIRegressionSpecControl",
+                                                           verbatimTextOutput("Macro.Regression")
+                                          )
+                                        )
+                                      )
+                             ),
+                             navbarMenu("Stock Market",
+                                        tabPanel("Real-Time Data",
+                                                 tableOutput("Data.Realtime")
+                                        ),
+                                        tabPanel("Historical Data",
+                                                 sidebarLayout(
+                                                   sidebarPanel(
+                                                     uiOutput("StockSelector")
+                                                   ),
+                                                   mainPanel(
+                                                     plotOutput("TestPlot"),
+                                                     
+                                                     tableOutput("LatestValue")
                                          )
                                        )
                               )
