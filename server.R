@@ -8,11 +8,6 @@ library(lubridate)
 library(Quandl)
 library(shinyIncubator)
 
-# Quandl authentication
-Quandl.auth("TXsxs3bxMNdjGEPKiqFh")
-
-#Quandl("BUNDESBANK/ESA_Q_I6_Y_0000_B1QG00_1000_TTTT_L_U_P", collapse="quarterly")
-
 
 # misc. functions
 
