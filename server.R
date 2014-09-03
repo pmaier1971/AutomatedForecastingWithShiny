@@ -49,8 +49,10 @@ shinyServer(function(input, output, session) {
                    "US.IP"= "INDPRO", "US.Claims"="IC4WSA", "US.Payroll"="PAYEMS",
                    "US.Unemployment"="UNRATE", "US.Unemployment.U6" = "U6RATE",
                    "US.Unemployment.PartTimeEconomicReasons" = "LNS12032194",
+                   "US.Unemployment.PartTimeNonEconomicReasons" = "LNS12032200",
                    "US.Unemployment.MarginallyAttached" = "LNU05026642",
                    "US.Unemployment.ParticipationRate"="CIVPART",
+                   "US.Unemployment.EmploymentToPopulation"="EMRATIO",
                    "US.JOLTS.QuitsRate" = "JTSQUR",
                    "US.JOLTS.HireRate" = "JTSHIR",
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
@@ -246,19 +248,33 @@ shinyServer(function(input, output, session) {
   # Panel US Labor Market
   
   US.LaborMarket.Dashboard.Data <- function(){
-    Data.Dashboard <- Reduce(function(...) merge(...), list(US.Unemployment, US.Unemployment.U6,
+    Data.Dashboard <- Reduce(function(...) merge(...), list(US.Unemployment, 
+                                                            US.Unemployment.U6,
                                                             US.Unemployment.PartTimeEconomicReasons,
+                                                            US.Unemployment.PartTimeNonEconomicReasons,
                                                             US.Unemployment.MarginallyAttached,
                                                             US.Unemployment.ParticipationRate,
                                                             US.Unemployment.WageGrowth,
-                                                            #US.Payroll,
+                                                            US.Payroll,
+                                                            US.Unemployment.EmploymentToPopulation,
                                                             US.JOLTS.QuitsRate,
-                                                            US.JOLTS.HireRate
-                                                            #,US.JOLTS.JobOpeningsRate,
-                                                            ))
-    #Data.Dashboard$CIVPART       <- Data.Dashboard$CIVPART/lag(Data.Dashboard$CIVPART, 12) -1
+                                                            US.JOLTS.HireRate)
+                             )
+    Data.Dashboard[,3]           <- 100*Data.Dashboard[,3]/(Data.Dashboard[,3]+Data.Dashboard[,4])
+    Data.Dashboard               <- Data.Dashboard[,-4]
+    Data.Dashboard[,7]           <- Data.Dashboard[,7]-lag(Data.Dashboard[,7], 1)
     Data.Dashboard$CES0500000003 <- 100*(Data.Dashboard$CES0500000003/lag(Data.Dashboard$CES0500000003, 12) -1)
     Data.Dashboard               <- Data.Dashboard[index(Data.Dashboard)>"1999-12-01",]
+    names(Data.Dashboard)        <- c("Civilian Unemployment Rate (in %)",
+                                      "Total unemployed, plus all marginally attached workers\n plus total employed part time for economic reasons (in %)",
+                                      "Part-Time Employment for Economic Reasons \n(All Industries, relative to Total Part-Time)",
+                                      "Not in Labor Force, Searched For Work and Available (Level)",
+                                      "Civilian Labor Force Participation Rate (in %)",
+                                      "Average Hourly Earnings of All Employees: \nTotal Private (y/y)",
+                                      "Total Nonfarm Payroll Growth: All Employees (m/m)",
+                                      "Civilian Employment-Population Ratio",
+                                      "Quits: Total Nonfarm (Rate)",
+                                      "Hires: Total Nonfarm (Rate)")
     return(Data.Dashboard)
   }
   
@@ -270,19 +286,19 @@ shinyServer(function(input, output, session) {
                            5,5,6, 7,7,8,
                            9,9,10, 11,11,12,
                            13,13,14, 15,15,16
-                           #,17,17,18, 19,19,20
+                           ,17,17,18, 19,19,20
                            ), ncol=6, byrow=TRUE)
     layout(Chart.Layout)
     op <- par(mar = par("mar")/1.2)                     
     
     for (idx in 1:ncol(Data)) {
       Chart.Title <- names(Data)[idx]
-      Chart.Title <- names(Data.US)[grep(Chart.Title, Data.US)]
+      #Chart.Title <- names(Data.US)[grep(Chart.Title, Data.US)]
       plot(Data[,idx], col="blue", type="l", main=Chart.Title, ylab="", xlab="")
       Data.Bar    <- c(max(Data.PostCrisis[,idx], na.rm = TRUE), tail(na.omit(Data.PostCrisis[,idx]),1),
                        min(Data.PostCrisis[,idx], na.rm = TRUE))
       Data.Line   <- matrix(c(0,Data.Bar[1],0,0), nrow=2)
-      plot(NA, ylim=c(-0.5, 0.5), xlim=c(max(Data.Bar),min(Data.Bar)), main="Latest obs. vs. cycle-trough", 
+      plot(NA, ylim=c(-0.5, 0.5), xlim=c(max(Data.Bar),min(Data.Bar)), main="Latest Observation vs. \nBest and Worst Point", 
            yaxt="n", ylab="")
       lines(Data.Line, col="blue", lwd=5)
       points(Data.Bar[2],0, col="red", pch=19, cex=2)
@@ -314,7 +330,7 @@ shinyServer(function(input, output, session) {
   })
   
   Regression.Output <- reactive({
-    Date.Frequency    <- index(Regression.Data())[length(Regression.Data())] - index(Regression.Data())[length(Regression.Data())-1]
+    Date.Frequency   <- index(Regression.Data())[length(Regression.Data())] - index(Regression.Data())[length(Regression.Data())-1]
     Regression       <- list()
     Regression[[1]]  <- auto.arima(Regression.Data())
     #     Regression[[2]]  <- ets(Regression.Data())
@@ -362,40 +378,37 @@ shinyServer(function(input, output, session) {
       
       Forecast = try(forecast(Regression.Output()[[idx.model]], h=4), silent=TRUE)
       if (class(Forecast)[1] != 'try-error') {
-        
-        
-      Date.Start        <- index(Regression.Data())[length(Regression.Data())]
-      Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
-      if (Date.Frequency > 85) {
-        Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
-      } else if (Date.Frequency > 27) {
-        Forecast.index  <- seq(Date.Start + months(1), Date.Start + months(4), by="1 month")
-      }else if (Date.Frequency < 7) {
-        Forecast.index  <- seq(Date.Start + 7, Date.Start + weeks(4), by="1 week")
-      }
-      Forecast.df <- data.frame(Forecast)
-      Chart.Data  <- data.frame(Period = index(Regression.Data()),
-                                Regression.Data(),
-                                Regression.Data(),
-                                Regression.Data(),
-                                Regression.Data(),
-                                Regression.Data())
-      names(Chart.Data) <- c("Period", "Mean", "High", "Low", "Upper", "Lower")
-      Chart.Data  <- rbind(Chart.Data, data.frame(Period = Forecast.index,
-                                                  Mean = Forecast.df[,1],
-                                                  High = Forecast.df[,2],
-                                                  Low = Forecast.df[,3],
-                                                  Upper = Forecast.df[,4],
-                                                  Lower = Forecast.df[,5]))
-      Plot.Data <- xts(Chart.Data[,-1], Chart.Data[,1])
-      plot(Plot.Data$Mean)
-      lines(Plot.Data$High, col="blue")
-      lines(Plot.Data$Low, col="blue")
-      lines(Plot.Data$Upper, col="tomato")
-      lines(Plot.Data$Lower, col="tomato")
-      #     plot(Forecast, col="tomato", main = paste("Forecasting ", input$Variable.Control.Choice, 
-      #                                               "\nModel: ", Forecast$method, sep=""), xaxt="n")
-      #lines(Forecast$fitted)
+        Date.Start        <- index(Regression.Data())[length(Regression.Data())]
+        Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
+        if (Date.Frequency > 85) {
+          Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
+        } else if (Date.Frequency > 27) {
+          Forecast.index  <- seq(Date.Start + months(1), Date.Start + months(4), by="1 month")
+        } else if (Date.Frequency <= 7) {
+          Forecast.index  <- seq(Date.Start + 7, Date.Start + weeks(4), by="1 week")
+        }
+        Forecast.df <- data.frame(Forecast)
+        Chart.Data  <- data.frame(Period = index(Regression.Data()),
+                                  Regression.Data(),
+                                  Regression.Data(),
+                                  Regression.Data(),
+                                  Regression.Data(),
+                                  Regression.Data())
+        names(Chart.Data) <- c("Period", "Mean", "High", "Low", "Upper", "Lower")
+        Chart.Data  <- rbind(Chart.Data, data.frame(Period = Forecast.index,
+                                                    Mean = Forecast.df[,1],
+                                                    High = Forecast.df[,2],
+                                                    Low = Forecast.df[,3],
+                                                    Upper = Forecast.df[,4],
+                                                    Lower = Forecast.df[,5]))
+        Plot.Data <- zoo(Chart.Data[,-1], Chart.Data[,1])
+        plot(Plot.Data$Mean, lwd=1, type="o", ylab="", xlab="", pch=19,
+             main=paste0(input$Variable.Control.Choice, " (black)\nConfidence bands: 85% in blue, 95% in red"))
+        lines(Plot.Data$High, col="blue", lwd=2)
+        lines(Plot.Data$Low, col="blue", lwd=2)
+        lines(Plot.Data$Upper, col="red", lwd=2)
+        lines(Plot.Data$Lower, col="red", lwd=2)
+        lines(Plot.Data$Mean, col="black", lwd=2, pch=19)
       } else
         plot(predict(Regression.Output()[[idx.model]], h=4))
     }
