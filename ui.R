@@ -36,10 +36,10 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                           #checkboxInput("RegressionXREGControlChoice", "Add additional regressors", FALSE)
                                         ),
                                         mainPanel(
-                                          HTML("<h3>Forecasting using ARIMA/XARIMA models</h3>"),
+                                          HTML("<h3>Comparison of Different Forecasting Models</h3>"),
                                           htmlOutput("Macro.Regression.Commentary"),
                                           plotOutput("Macro.Chart"),
-                                          HTML("Regression specification"),
+                                          HTML("Regression specification (Arima model)"),
                                           checkboxInput("UIRegressionSpecControl", "Show Regression Output", value=FALSE),
                                           conditionalPanel(condition = "input.UIRegressionSpecControl",
                                                            verbatimTextOutput("Macro.Regression")

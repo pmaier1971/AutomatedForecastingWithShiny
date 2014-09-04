@@ -58,7 +58,8 @@ shinyServer(function(input, output, session) {
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
                    "US.Unemployment.WageGrowth" = "CES0500000003",
                    "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
-                   "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI"
+                   "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI",
+                   "US.HouseholdDebt" = "HDTGPDUSQ163N"
                    )      
       Data.EU <- c("EU.GDP.Real"="EUNGDP", "EU.Unemployment"="LRHUTTTTEZM156S",
                    "EU.CPI.Headline"="CP0000EZ17M086NEST", "EU.CPI.Core"="CPHPLA01EZM661N",
@@ -70,7 +71,8 @@ shinyServer(function(input, output, session) {
       Data.UK <- c("UK.GDP.Real"="UKNGDP", "UK.CPI.Headline"="CPALTT01GBQ657N", "UK.CPI.Core"="GBRCPICORMINMEI",
                    "UK.Unemployment"="LMUNRRTTGBM156S", "FX.UK.USD"="DEXUSUK")
       Data.CA <- c("CA.GDP.Real"="NAEXKP01CAQ189S", "CA.CPI.Headline"="CANCPIALLMINMEI", 
-                   "CA.CPI.Core"="CANCPICORMINMEI", "FX.CA.USD"="EXCAUS", "FX.CA.Effective"="RBCABIS")
+                   "CA.CPI.Core"="CANCPICORMINMEI", "FX.CA.USD"="EXCAUS", "FX.CA.Effective"="RBCABIS",
+                   "CA.HouseholdDebt" = "HDTGPDCAQ163N")
       
       List.Countries <- c("Data.US", "Data.EU", "Data.UK", "Data.CA")
       
@@ -177,6 +179,7 @@ shinyServer(function(input, output, session) {
   })
   
   output$Commentary.Country.Analysis <-renderText({
+    
     Country <- input$Country.Analysis.Control.Choice
     Commentary <- "<h4>Key figures</h4><ul>"
     
@@ -184,13 +187,12 @@ shinyServer(function(input, output, session) {
     Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
     Commentary <- paste(Commentary, "<li>Real GDP growth in ", format(as.yearqtr(index(Data[nrow(Data)])), "Q%q %Y"), 
                         " was ", round(Data[nrow(Data)],2),"%", sep ="")
-    if (Change > 0)      Commentary <- paste(Commentary, ". This is an acceleration of ", Change, "%,
-                                             over the", 
+    if (Change > 0) {     Commentary <- paste(Commentary, ". This is an acceleration of ", Change, "%, over the", 
                                              round(Data[nrow(Data)-1],2), "% last time.</li>", sep="")
-    else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%, relative to ", 
+    } else if  (Change < 0) { Commentary <-paste(Commentary, ", down ", Change, "%, relative to ", 
                                             round(Data[nrow(Data)-1],2),
                                             "% in the last quarter.</li>", sep="")
-    else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")
+    } else  {               Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")}
     
     if (exists(paste(Country,".Unemployment", sep=""))) {
       Data       <- get(paste(Country,".Unemployment", sep=""))  
@@ -223,12 +225,12 @@ shinyServer(function(input, output, session) {
     }    
     
     if (exists(paste(Country,".SOV.10Y", sep=""))) {
-      Data       <- get(paste(Country,".SOV.10Y", sep=""))
+      Data       <- na.omit(get(paste(Country,".SOV.10Y", sep="")))
       Change     <- round(coredata(Data[nrow(Data)])-coredata(Data[nrow(Data)-1]),1)
-      Commentary <- paste(Commentary, "<li>The 10Y sovereign bond yield in ", format(index(Data[nrow(Data)]), "%B %Y"), 
+      Commentary <- paste(Commentary, "<li>The 10Y sovereign bond yield on ", format(index(Data[nrow(Data)]), "%d %B %Y"), 
                           " was ", round(Data[nrow(Data)],1),"%", sep ="")
-      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "% </li>", sep="")
-      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "%</li>", sep="")
+      if (Change > 0)      Commentary <- paste(Commentary, ", up ", Change, "%  from the previous trading day.</li>", sep="")
+      else if (Change < 0) Commentary <-paste(Commentary, ", down ", Change, "% from the previous trading day.</li>", sep="")
       else                 Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")      
     }    
     
@@ -330,11 +332,23 @@ shinyServer(function(input, output, session) {
   })
   
   Regression.Output <- reactive({
-    Date.Frequency   <- index(Regression.Data())[length(Regression.Data())] - index(Regression.Data())[length(Regression.Data())-1]
     Regression       <- list()
-    Regression[[1]]  <- auto.arima(Regression.Data())
-    #     Regression[[2]]  <- ets(Regression.Data())
-    #     Regression[[3]]  <- HoltWinters(ts(Regression.Data(), frequency=Date.Frequency))
+    Input            <- Regression.Data()
+    Regression[[1]]  <- auto.arima(na.omit(Input))
+    Regression[[2]]  <- ets(na.omit(Input))
+    
+    # For HoltWinters: convert xts to ts
+    Date.Frequency <- switch(periodicity(Input)$scale,
+                   daily=365,
+                   weekly=52,
+                   monthly=12,
+                   quarterly=4,
+                   yearly=1)
+    pltStart <- as.POSIXlt(start(Input))
+    Start <- c(pltStart$year+1900,pltStart$mon+1)
+    Input.ts <- na.omit(ts(Input[,names(Input)], start=Start, frequency=Date.Frequency))
+    Regression[[3]]  <- HoltWinters(Input.ts)
+    
     return(Regression)
   })
   
@@ -344,75 +358,83 @@ shinyServer(function(input, output, session) {
   
   output$Macro.Regression.Commentary <- renderText({
     
-    Forecast          <- forecast(Regression.Output()[[1]], h=4)
-    Date.Start        <- index(Regression.Data())[length(Regression.Data())]
-    Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
-    if (Date.Frequency > 85) {
-      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
-      Date.Start      <- format(as.yearqtr(Date.Start), "Q%q %Y")
-      Forecast.Period <- format(as.yearqtr(Forecast.index[1]), "Q%q %Y")
-    } else if (Date.Frequency > 27) {
-      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="1 month")
-      Date.Start      <- format(Date.Start, "%B %Y")
-      Forecast.Period <- format(Forecast.index[1], "%B %Y")
-    }else if (Date.Frequency > 6) {
-      Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="1 week")
-      Date.Start      <- format(Date.Start, "%d %B %Y")
-      Forecast.Period <- format(Forecast.index[1], "%d %B %Y")
+    Date.Frequency <- switch(periodicity(Regression.Data())$scale,
+                             daily=365,
+                             weekly=52,
+                             monthly=12,
+                             quarterly=4,
+                             yearly=1)
+    
+    if (Date.Frequency == 4) {
+      Date.Start      <- format(as.yearqtr(end(Regression.Data()) ), "Q%q %Y")
+      Forecast.Period <- format(as.yearqtr(end(Regression.Data()) + months(3)), "Q%q %Y")
+    } else if (Date.Frequency == 12) {
+      Date.Start      <- format(end(Regression.Data()) , "%B %Y")
+      Forecast.Period <- format(end(Regression.Data()) + months(1), "%B %Y")
+    } else if (Date.Frequency == 52) {
+      Date.Start      <- format(end(Regression.Data()) , "%d %B %Y")
+      Forecast.Period <- format(end(Regression.Data()) + weeks(1), "%d %B %Y")
     }
     
-    Commentary <- ("<ul><li>")
-    Commentary <- paste0(Commentary, "The latest observation for ", Date.Start)
-    Commentary <- paste0(Commentary, " was ", round(tail(Regression.Data(),1),2), ".")
-    Commentary <- paste0(Commentary, "<li>A simple ARIMA/XARIMA model with optimal lag selection - as shown below - would forecasts ")
-    Commentary <- paste0(Commentary, round(Forecast$mean[1],2)," for ", Forecast.Period, ".</li></ul>")
+    Commentary <- paste0("The latest observation for ", Date.Start)
+    Commentary <- paste0(Commentary, " was ", round(tail(Regression.Data(),1),2), ". ")
+    Commentary <- paste0(Commentary, " Below forecasts from different models for the next observation (", Forecast.Period, "): <ul>")
+    
+    Pooled.Forecast <- 0
+    Model.Type = c("An ARIMA model with optimal lag selection", 
+                   "An exponential smoothing state space model",
+                   "Holt-Winters Filtering, aimed to minimize the prediction error,")
+    for (idx.model in 1:length(Regression.Output())){
+      Forecast        <- forecast(Regression.Output()[[idx.model]], h=4)
+      Pooled.Forecast <- Pooled.Forecast + Forecast$mean[1]
+      Commentary      <- paste0(Commentary, "<li>Model ", idx.model, ": ", Model.Type[idx.model],
+                                "  would forecast ", round(Forecast$mean[1],2), ".</li>")
+    }
+    Pooled.Forecast <- Pooled.Forecast / length(Regression.Output())
+    Commentary      <- paste0(Commentary, "</ul>Simple forecast averaging can, in many cases, improve upon any single forecasting model. The average forecast over all models would predict ", 
+                              round(Pooled.Forecast,2), " for the next release.")    
     return(Commentary)
   })
   
   output$Macro.Chart <- renderPlot({
-    #par(mfrow=c(2,2))
-    
+    par(mfrow=c(2,2))
     for (idx.model in 1:length(Regression.Output())){
-      cat("\n       - Model ", idx.model)
-      #Forecast          <- forecast(Regression.Output()[[idx.model]], h=4)
-      
-      Forecast = try(forecast(Regression.Output()[[idx.model]], h=4), silent=TRUE)
-      if (class(Forecast)[1] != 'try-error') {
-        Date.Start        <- index(Regression.Data())[length(Regression.Data())]
-        Date.Frequency    <- Date.Start - index(Regression.Data())[length(Regression.Data())-1]
-        if (Date.Frequency > 85) {
-          Forecast.index  <- seq(Date.Start + months(3), Date.Start + years(1), by="3 months")
-        } else if (Date.Frequency > 27) {
-          Forecast.index  <- seq(Date.Start + months(1), Date.Start + months(4), by="1 month")
-        } else if (Date.Frequency <= 7) {
-          Forecast.index  <- seq(Date.Start + 7, Date.Start + weeks(4), by="1 week")
-        }
-        Forecast.df <- data.frame(Forecast)
-        Chart.Data  <- data.frame(Period = index(Regression.Data()),
-                                  Regression.Data(),
-                                  Regression.Data(),
-                                  Regression.Data(),
-                                  Regression.Data(),
-                                  Regression.Data())
-        names(Chart.Data) <- c("Period", "Mean", "High", "Low", "Upper", "Lower")
-        Chart.Data  <- rbind(Chart.Data, data.frame(Period = Forecast.index,
-                                                    Mean = Forecast.df[,1],
-                                                    High = Forecast.df[,2],
-                                                    Low = Forecast.df[,3],
-                                                    Upper = Forecast.df[,4],
-                                                    Lower = Forecast.df[,5]))
-        Plot.Data <- zoo(Chart.Data[,-1], Chart.Data[,1])
-        plot(Plot.Data$Mean, lwd=1, type="o", ylab="", xlab="", pch=19,
+      Date.Frequency <- switch(periodicity(Regression.Data())$scale,
+                               daily=365,
+                               weekly=52,
+                               monthly=12,
+                               quarterly=4,
+                               yearly=1)
+      if (Date.Frequency ==4) {
+        Forecast = forecast(Regression.Output()[[idx.model]], h=4)
+        Forecast.index  <- seq(start(Regression.Data()), end(Regression.Data()) + years(1), by="3 months")
+      } else if (Date.Frequency ==12 ) {
+        Forecast = forecast(Regression.Output()[[idx.model]], h=12)
+        Forecast.index  <- seq(start(Regression.Data()), end(Regression.Data()) + months(12), by="1 month")
+      } else if (Date.Frequency ==52 ) {
+        Forecast = forecast(Regression.Output()[[idx.model]], h=52)
+        Forecast.index  <- seq(start(Regression.Data()), end(Regression.Data()) + weeks(52), by="1 week")
+      }
+      #browser()
+      Chart.Data  <- zoo(, Forecast.index)
+      Chart.Data  <- merge(Chart.Data, as.zoo(Regression.Data()))
+      Chart.Data  <- merge(Chart.Data, zoo(data.frame(Forecast), 
+                                           Forecast.index[!Forecast.index %in% index(Regression.Data())]))
+      Chart.Data[end(Regression.Data()),] <- Chart.Data[end(Regression.Data()),1]
+      names(Chart.Data) <- c("History", "Mean", "High", "Low", "Upper", "Lower")
+      Chart.Data <- Chart.Data[index(Chart.Data)>=Sys.Date()-years(10),]
+        
+      #Plot.Data <- Chart.Data #zoo(Chart.Data[,-1], Chart.Data[,1])
+        plot(Chart.Data$History, lwd=1, type="l", ylab="", xlab="", ylim=c(min(Chart.Data, na.rm=TRUE), max(Chart.Data, na.rm=TRUE)), #pch=19,
              main=paste0(input$Variable.Control.Choice, " (black)\nConfidence bands: 85% in blue, 95% in red"))
-        lines(Plot.Data$High, col="blue", lwd=2)
-        lines(Plot.Data$Low, col="blue", lwd=2)
-        lines(Plot.Data$Upper, col="red", lwd=2)
-        lines(Plot.Data$Lower, col="red", lwd=2)
-        lines(Plot.Data$Mean, col="black", lwd=2, pch=19)
-      } else
-        plot(predict(Regression.Output()[[idx.model]], h=4))
+        lines(Chart.Data$High, col="blue", lwd=2)
+        lines(Chart.Data$Low, col="blue", lwd=2)
+        lines(Chart.Data$Upper, col="red", lwd=2)
+        lines(Chart.Data$Lower, col="red", lwd=2)
+        lines(Chart.Data$Mean, col="black", lwd=2, pch=19)
+      
     }
-    #par(mfrow=c(1,1))
+    par(mfrow=c(1,1))
   })
   
   output$UI.Date <- renderText({
