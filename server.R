@@ -345,8 +345,8 @@ shinyServer(function(input, output, session) {
                    quarterly=4,
                    yearly=1)
     pltStart <- as.POSIXlt(start(Input))
-    Start <- c(pltStart$year+1900,pltStart$mon+1)
-    Input.ts <- na.omit(ts(Input[,names(Input)], start=Start, frequency=Date.Frequency))
+    Start    <- c(pltStart$year+1900,pltStart$mon+1)
+    Input.ts <- ts(na.omit(Input[,names(Input)]), start=Start, frequency=Date.Frequency)
     Regression[[3]]  <- HoltWinters(Input.ts)
     
     return(Regression)
