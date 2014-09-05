@@ -53,6 +53,19 @@ shinyServer(function(input, output, session) {
                    "US.Unemployment.MarginallyAttached" = "LNU05026642",
                    "US.Unemployment.ParticipationRate"="CIVPART",
                    "US.Unemployment.EmploymentToPopulation"="EMRATIO",
+                   "US.Activity.ChicagoFed.Employment" = "EUANDH",
+                   "US.Activity.ChicagoFed" = "CFNAI",
+                   "US.Activity.PhillyFed.Current" = "USPHCI",
+                   "US.Activity.PhillyFed.Leading" = "USSLIND",
+                   "US.Activity.NYFed.Current" = "GACDISA066MSFRBNY",
+                   "US.Activity.NYFed.Leading" = "GAFDISA066MSFRBNY",
+                   "US.Activity.NYFed.AvWorkWeek.Current" = "AWCDISA066MSFRBNY",
+                   "US.Activity.NYFed.NoEmployees.Current" = "NECDISA066MSFRBNY",
+                   "US.Activity.NYFed.AvWorkWeek.Leading" = "AWFDINA066MNFRBNY",
+                   "US.Activity.NYFed.NoEmployees.Leading" = "NEFDINA066MNFRBNY",
+                   "US.Activity.SFFed.TechPulse" = "SFTPAGRM158SFRBSF",
+                   "US.Activity.ISM.NonManufacturing.Employment" = "NMFEI",
+                   "US.Activity.ISM.Manufacturing.Employment" = "NAPMEI",
                    "US.JOLTS.QuitsRate" = "JTSQUR",
                    "US.JOLTS.HireRate" = "JTSHIR",
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
@@ -264,7 +277,7 @@ shinyServer(function(input, output, session) {
                              )
     Data.Dashboard[,3]           <- 100*Data.Dashboard[,3]/(Data.Dashboard[,3]+Data.Dashboard[,4])
     Data.Dashboard               <- Data.Dashboard[,-4]
-    Data.Dashboard[,7]           <- Data.Dashboard[,7]-lag(Data.Dashboard[,7], 1)
+    Data.Dashboard[,7]           <- Data.Dashboard[,7]-lag(Data.Dashboard[,7], 1) # use change in payrolls
     Data.Dashboard$CES0500000003 <- 100*(Data.Dashboard$CES0500000003/lag(Data.Dashboard$CES0500000003, 12) -1)
     Data.Dashboard               <- Data.Dashboard[index(Data.Dashboard)>"1999-12-01",]
     names(Data.Dashboard)        <- c("Civilian Unemployment Rate (in %)",
@@ -438,9 +451,64 @@ shinyServer(function(input, output, session) {
   })
   
   output$UI.Date <- renderText({
-    Commentary.Date <- paste0("Last Data Update: ", format(Last.Update, "%d %B %Y"))
+    Commentary.Date <- paste0("Date of last data refresh: ", format(Last.Update, "%d %B %Y"))
     return(Commentary.Date)
   })
+  
+  misc.EnsembleForecasting <- function(data, NoPredictors, NoReps){
+  # Function expects the dependent variable in the first column, and all predicts in the columns that follow
+    NoVars     <- dim(data)[2]
+    #data       <- data[complete.cases(data)]
+    idx.Sample <- index(data) >= as.Date("2007-01-01")
+    Results    <- matrix(NA, nrow=sum(idx.Sample), ncol=NoReps) 
+    
+      for (idx.loop in (1:NoReps)){
+        VarsSelected        <- sample(2:NoVars, NoPredictors, replace=FALSE)
+        Regression          <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
+        Forecast            <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
+        Results[,idx.loop]  <- Forecast$pred
+      }
+    Results.Reduced <- data.frame(Mean = apply(Results, 1, mean, na.rm=TRUE),
+                                  t(apply(Results, 1, quantile, probs=c(0.1, 0.25, 0.4, 0.6, 0.75, 0.90), 
+                                          na.rm=TRUE, names=TRUE)))
+    Results.Reduced <- zoo(Results.Reduced, index(data)[idx.Sample])
+    return(Results.Reduced)
+  }
+  
+  misc.plot.EnsembleForecasting <- function(EnsembleForecast, ChartTitle=""){
+    plot(EnsembleForecast[,1], col="black", lwd=2, 
+         ylim=c(min(EnsembleForecast, na.rm=TRUE), max(EnsembleForecast, na.rm=TRUE)),
+         xlab="", ylab="", main=ChartTitle, 
+         sub="Note: Interval Ranges: 10%-90%; 25-75%; 40-60%")
+    segments(index(EnsembleForecast), EnsembleForecast[,2], index(EnsembleForecast), EnsembleForecast[,7], lwd=10, col="lightskyblue")
+    segments(index(EnsembleForecast), EnsembleForecast[,3], index(EnsembleForecast), EnsembleForecast[,6], lwd=10, col="dodgerblue")    
+    segments(index(EnsembleForecast), EnsembleForecast[,4], index(EnsembleForecast), EnsembleForecast[,5], lwd=10, col="mediumblue")    
+    lines(EnsembleForecast[,1], col="red", lwd=3)
+  }
+  
+  output$Payroll.EnsembleForecast <- renderPlot({
+    Forecast.Data <- Reduce(function(...) merge(...), list( US.Payroll - lag(US.Payroll, 1),
+                                                            US.Activity.ChicagoFed.Employment,
+                                                            US.Activity.ChicagoFed,
+                                                            US.Activity.PhillyFed.Current,
+                                                            US.Activity.PhillyFed.Leading,
+                                                            US.Activity.NYFed.Current,
+                                                            US.Activity.NYFed.Leading,
+                                                            US.Activity.NYFed.AvWorkWeek.Current,
+                                                            US.Activity.NYFed.NoEmployees.Current,
+                                                            US.Activity.NYFed.AvWorkWeek.Leading,
+                                                            US.Activity.NYFed.NoEmployees.Leading,
+                                                            US.Activity.SFFed.TechPulse,
+                                                            US.Activity.ISM.NonManufacturing.Employment,
+                                                            US.Activity.ISM.Manufacturing.Employment,
+                                                            US.JOLTS.QuitsRate,
+                                                            US.JOLTS.HireRate,
+                                                            US.JOLTS.JobOpeningsRate)     )
+    Forecast.Data   <- Forecast.Data[index(Forecast.Data) >= as.Date("1980-01-01"),]
+    Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=500)
+    return(misc.plot.EnsembleForecasting(Forecast.Result, ChartTitle="Change in Non-Farm Payrolls"))
+  })
+  
   
   # --------- STOCK MARKET
   
