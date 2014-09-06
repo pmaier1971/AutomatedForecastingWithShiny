@@ -57,8 +57,8 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                                        sample of the possible future states of a dynamical system.... When many different forecast models are used to try to generate 
                                                        a forecast, the approach is termed multi-model ensemble forecasting. This method of forecasting has been shown to improve forecasts when compared to a 
                                                        single model-based approach'</i></blockquote><p>
-Below we plot Ensemble Forecasts for the Change in Nonfarm Payrolls. These are calculated using about 20 activity indicators (including ISM Manufacturing, JOLTS data, and regional Fed Activity Indicators),
-                                                      of which we randomly use 4 as predictors. This process is repeated 500 times, and we plot the medium forecast, as well as different percentiles. <p>Note: It may take a few minutes until the forecast is shown."),
+Below we plot Ensemble Forecasts for the Change in Nonfarm Payrolls. These are calculated using about 20 activity indicators (including ISM Manufacturing, JOLTS data, and regional Fed activity indicators),
+                                                      of which we randomly use 4 as predictors. This process is repeated 250 times, and we plot the medium forecast, as well as different percentiles. <p>Note: It may take a few minutes until the forecast is shown."),
                                                  plotOutput("Payroll.EnsembleForecast"),
                                                  HTML("The code for this model is also on GitHub (see 'About' tab).")
                                         )

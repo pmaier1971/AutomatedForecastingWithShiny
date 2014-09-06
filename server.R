@@ -25,7 +25,7 @@ misc.growth.monthlydata.to.yy <- function(x){
 
 
 shinyServer(function(input, output, session) {
-   
+  
   # Test whether we are online
   ListOfCodes <- c("SP 500"="^GSPC", 
                    "UST 10Y"="^TNX", 
@@ -73,7 +73,7 @@ shinyServer(function(input, output, session) {
                    "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
                    "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI",
                    "US.HouseholdDebt" = "HDTGPDUSQ163N"
-                   )      
+      )      
       Data.EU <- c("EU.GDP.Real"="EUNGDP", "EU.Unemployment"="LRHUTTTTEZM156S",
                    "EU.CPI.Headline"="CP0000EZ17M086NEST", "EU.CPI.Core"="CPHPLA01EZM661N",
                    "EU.SOV.10Y"="IRLTLT01EZM156N", "FX.EU.USD"="DEXUSEU", "FX.EU.Effective"="RBXMBIS",
@@ -154,7 +154,7 @@ shinyServer(function(input, output, session) {
                                by = "3 months"))
       Chart.Data  <- merge(Chart.Data, zoo(data.frame(History = FC.Data$x, Fitted = FC.Data$fitted),
                                            as.Date(index(History))))
- 
+      
       Chart.Data  <- merge(Chart.Data, zoo(data.frame(FC.Data),
                                            seq(from = index(tail(History,1))+months(3), to = index(tail(History,1)) + months(12),
                                                by = "3 months")))
@@ -201,10 +201,10 @@ shinyServer(function(input, output, session) {
     Commentary <- paste(Commentary, "<li>Real GDP growth in ", format(as.yearqtr(index(Data[nrow(Data)])), "Q%q %Y"), 
                         " was ", round(Data[nrow(Data)],2),"%", sep ="")
     if (Change > 0) {     Commentary <- paste(Commentary, ". This is an acceleration of ", Change, "%, over the", 
-                                             round(Data[nrow(Data)-1],2), "% last time.</li>", sep="")
+                                              round(Data[nrow(Data)-1],2), "% last time.</li>", sep="")
     } else if  (Change < 0) { Commentary <-paste(Commentary, ", down ", Change, "%, relative to ", 
-                                            round(Data[nrow(Data)-1],2),
-                                            "% in the last quarter.</li>", sep="")
+                                                 round(Data[nrow(Data)-1],2),
+                                                 "% in the last quarter.</li>", sep="")
     } else  {               Commentary <-paste(Commentary, ", (unchanged).</li>", sep="")}
     
     if (exists(paste(Country,".Unemployment", sep=""))) {
@@ -274,7 +274,7 @@ shinyServer(function(input, output, session) {
                                                             US.Unemployment.EmploymentToPopulation,
                                                             US.JOLTS.QuitsRate,
                                                             US.JOLTS.HireRate)
-                             )
+    )
     Data.Dashboard[,3]           <- 100*Data.Dashboard[,3]/(Data.Dashboard[,3]+Data.Dashboard[,4])
     Data.Dashboard               <- Data.Dashboard[,-4]
     Data.Dashboard[,7]           <- Data.Dashboard[,7]-lag(Data.Dashboard[,7], 1) # use change in payrolls
@@ -298,11 +298,11 @@ shinyServer(function(input, output, session) {
     Data.PostCrisis <- Data[index(Data)>"2007-12-01",]
     
     Chart.Layout <- matrix(c(1,1,2, 3,3,4,
-                           5,5,6, 7,7,8,
-                           9,9,10, 11,11,12,
-                           13,13,14, 15,15,16
-                           ,17,17,18, 19,19,20
-                           ), ncol=6, byrow=TRUE)
+                             5,5,6, 7,7,8,
+                             9,9,10, 11,11,12,
+                             13,13,14, 15,15,16
+                             ,17,17,18, 19,19,20
+    ), ncol=6, byrow=TRUE)
     layout(Chart.Layout)
     op <- par(mar = par("mar")/1.2)                     
     
@@ -352,11 +352,11 @@ shinyServer(function(input, output, session) {
     
     # For HoltWinters: convert xts to ts
     Date.Frequency <- switch(periodicity(Input)$scale,
-                   daily=365,
-                   weekly=52,
-                   monthly=12,
-                   quarterly=4,
-                   yearly=1)
+                             daily=365,
+                             weekly=52,
+                             monthly=12,
+                             quarterly=4,
+                             yearly=1)
     pltStart <- as.POSIXlt(start(Input))
     Start    <- c(pltStart$year+1900,pltStart$mon+1)
     Input.ts <- ts(na.omit(Input[,names(Input)]), start=Start, frequency=Date.Frequency)
@@ -436,54 +436,57 @@ shinyServer(function(input, output, session) {
       Chart.Data[end(Regression.Data()),] <- Chart.Data[end(Regression.Data()),1]
       names(Chart.Data) <- c("History", "Mean", "High", "Low", "Upper", "Lower")
       Chart.Data <- Chart.Data[index(Chart.Data)>=Sys.Date()-years(10),]
-        
+      
       #Plot.Data <- Chart.Data #zoo(Chart.Data[,-1], Chart.Data[,1])
-        plot(Chart.Data$History, lwd=1, type="l", ylab="", xlab="", ylim=c(min(Chart.Data, na.rm=TRUE), max(Chart.Data, na.rm=TRUE)), #pch=19,
-             main=paste0(input$Variable.Control.Choice, " (black)\nConfidence bands: 85% in blue, 95% in red"))
-        lines(Chart.Data$High, col="blue", lwd=2)
-        lines(Chart.Data$Low, col="blue", lwd=2)
-        lines(Chart.Data$Upper, col="red", lwd=2)
-        lines(Chart.Data$Lower, col="red", lwd=2)
-        lines(Chart.Data$Mean, col="black", lwd=2, pch=19)
+      plot(Chart.Data$History, lwd=1, type="l", ylab="", xlab="", ylim=c(min(Chart.Data, na.rm=TRUE), max(Chart.Data, na.rm=TRUE)), #pch=19,
+           main=paste0(input$Variable.Control.Choice, " (black)\nConfidence bands: 85% in blue, 95% in red"))
+      lines(Chart.Data$High, col="blue", lwd=2)
+      lines(Chart.Data$Low, col="blue", lwd=2)
+      lines(Chart.Data$Upper, col="red", lwd=2)
+      lines(Chart.Data$Lower, col="red", lwd=2)
+      lines(Chart.Data$Mean, col="black", lwd=2, pch=19)
       
     }
     par(mfrow=c(1,1))
   })
   
   output$UI.Date <- renderText({
-    Commentary.Date <- paste0("Date of last data refresh: ", format(Last.Update, "%d %B %Y"))
+    Commentary.Date <- paste0("Last Data Update: ", format(Last.Update, "%d %B %Y"))
     return(Commentary.Date)
   })
   
   misc.EnsembleForecasting <- function(data, NoPredictors, NoReps){
-  # Function expects the dependent variable in the first column, and all predicts in the columns that follow
+    # Function expects the dependent variable in the first column, and all predicts in the columns that follow
     NoVars     <- dim(data)[2]
+    data       <- data[complete.cases(data)]
     idx.Sample <- index(data) >= as.Date("2007-01-01")
     Results    <- matrix(NA, nrow=sum(idx.Sample), ncol=NoReps) 
     
     withProgress(session, min=1, max=NoReps, {
       setProgress(message = 'Calculation in progress',
                   detail = 'Calculating the Ensemble Forecast')
+      
       for (idx.loop in (1:NoReps)){
         setProgress(value = idx.loop)
-        VarsSelected        <- sample(2:NoVars, NoPredictors, replace=FALSE)
-        Regression          <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
-        Forecast            <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
+        VarsSelected <- sample(2:NoVars, NoPredictors, replace=FALSE)
+        Regression   <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
+        Forecast     <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
         Results[,idx.loop]  <- Forecast$pred
       }
-    })
-    Results.Reduced <- data.frame(Mean = apply(Results, 1, mean, na.rm=TRUE),
+    
+    Results.Reduced <- data.frame(Mean = apply(Results, 1, mean),
                                   t(apply(Results, 1, quantile, probs=c(0.1, 0.25, 0.4, 0.6, 0.75, 0.90), 
                                           na.rm=TRUE, names=TRUE)))
     Results.Reduced <- zoo(Results.Reduced, index(data)[idx.Sample])
     return(Results.Reduced)
+  })
   }
   
   misc.plot.EnsembleForecasting <- function(EnsembleForecast, ChartTitle=""){
     plot(EnsembleForecast[,1], col="black", lwd=2, 
          ylim=c(min(EnsembleForecast, na.rm=TRUE), max(EnsembleForecast, na.rm=TRUE)),
          xlab="", ylab="", main=ChartTitle, 
-         sub="Note: Interval Ranges: 10%-90%; 25-75%; 40-60%")
+         sub="Note: Intervall Ranges: 10%-90%; 25-75%; 40-60%")
     segments(index(EnsembleForecast), EnsembleForecast[,2], index(EnsembleForecast), EnsembleForecast[,7], lwd=10, col="lightskyblue")
     segments(index(EnsembleForecast), EnsembleForecast[,3], index(EnsembleForecast), EnsembleForecast[,6], lwd=10, col="dodgerblue")    
     segments(index(EnsembleForecast), EnsembleForecast[,4], index(EnsembleForecast), EnsembleForecast[,5], lwd=10, col="mediumblue")    
@@ -509,7 +512,7 @@ shinyServer(function(input, output, session) {
                                                             US.JOLTS.HireRate,
                                                             US.JOLTS.JobOpeningsRate)     )
     Forecast.Data   <- Forecast.Data[index(Forecast.Data) >= as.Date("1980-01-01"),]
-    Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=500)
+    Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=250)
     return(misc.plot.EnsembleForecasting(Forecast.Result, ChartTitle="Change in Non-Farm Payrolls"))
   })
   
