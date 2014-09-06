@@ -25,7 +25,7 @@ misc.growth.monthlydata.to.yy <- function(x){
 
 
 shinyServer(function(input, output, session) {
-  
+   
   # Test whether we are online
   ListOfCodes <- c("SP 500"="^GSPC", 
                    "UST 10Y"="^TNX", 
@@ -458,16 +458,20 @@ shinyServer(function(input, output, session) {
   misc.EnsembleForecasting <- function(data, NoPredictors, NoReps){
   # Function expects the dependent variable in the first column, and all predicts in the columns that follow
     NoVars     <- dim(data)[2]
-    #data       <- data[complete.cases(data)]
     idx.Sample <- index(data) >= as.Date("2007-01-01")
     Results    <- matrix(NA, nrow=sum(idx.Sample), ncol=NoReps) 
     
+    withProgress(session, min=1, max=NoReps, {
+      setProgress(message = 'Calculation in progress',
+                  detail = 'Calculating the Ensemble Forecast')
       for (idx.loop in (1:NoReps)){
+        setProgress(value = idx.loop)
         VarsSelected        <- sample(2:NoVars, NoPredictors, replace=FALSE)
         Regression          <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
         Forecast            <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
         Results[,idx.loop]  <- Forecast$pred
       }
+    })
     Results.Reduced <- data.frame(Mean = apply(Results, 1, mean, na.rm=TRUE),
                                   t(apply(Results, 1, quantile, probs=c(0.1, 0.25, 0.4, 0.6, 0.75, 0.90), 
                                           na.rm=TRUE, names=TRUE)))
