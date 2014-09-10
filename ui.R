@@ -6,10 +6,15 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                   progressInit(),
                   navbarPage("Economic Dashboard",
                              tabPanel("Overview",
-                                      HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters.<p>Note: This page might take a few seconds to load, if the data is refreshed."),
+                                      sidebarLayout(
+                                        sidebarPanel(    
+                                          htmlOutput("MarketUpdate.Commentary")
+                                          ),
+                                      mainPanel(
+                                          HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters.<p>Note: This page might take a few seconds to load, if the data is refreshed."),
                                       plotOutput("Overview.Charts"),
                                       htmlOutput("UI.Date")
-                             ),
+                             ))),
                              tabPanel("Country View",
                                       sidebarLayout(
                                         sidebarPanel(
@@ -31,7 +36,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                         )
                              ),
                              navbarMenu("Forecasting",
-                                        tabPanel("Automated Forecasts: Model Comparison",
+                                        tabPanel("Time Series Forecasting",
                                                  sidebarLayout(
                                                    sidebarPanel(
                                                      uiOutput("UI.Macro.Control"),
@@ -39,7 +44,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                                      #checkboxInput("RegressionXREGControlChoice", "Add additional regressors", FALSE)
                                                    ),
                                                    mainPanel(
-                                                     HTML("<h3>Automated Forecasts: Comparison of Different Forecasting Models</h3>"),
+                                                     HTML("<h3>Time Series Forecasting: Comparison of Different Approaches</h3>"),
                                                      htmlOutput("Macro.Regression.Commentary"),
                                                      plotOutput("Macro.Chart"),
                                                      HTML("Regression specification (Arima model)"),
@@ -50,17 +55,23 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                                    )
                                                  )
                                         ),
-                                        tabPanel("Ensemble Forecasting: Change in Nonfarm Payrolls",
-                                                 h3("Ensemble Forecasting: Change in Nonfarm Payrolls"),
-                                                 HTML("From <a href='http://en.wikipedia.org/wiki/Ensemble_forecasting'>Wikipedia</a>:
+                                        tabPanel("Forecast Pooling",
+                                                 h3("Forecast Pooling"),
+                                                 HTML("Here we employ Forecast Pooling, also known as Ensemble Forecasting. From <a href='http://en.wikipedia.org/wiki/Ensemble_forecasting'>Wikipedia</a>:
                                                        <p><blockquote><i>'Ensemble forecasting is a numerical prediction method that is used to attempt to generate a representative 
                                                        sample of the possible future states of a dynamical system.... When many different forecast models are used to try to generate 
                                                        a forecast, the approach is termed multi-model ensemble forecasting. This method of forecasting has been shown to improve forecasts when compared to a 
                                                        single model-based approach'</i></blockquote><p>
-Below we plot Ensemble Forecasts for the Change in Nonfarm Payrolls. These are calculated using about 20 activity indicators (including ISM Manufacturing, JOLTS data, and regional Fed activity indicators),
-                                                      of which we randomly use 4 as predictors. This process is repeated 250 times, and we plot the medium forecast, as well as different percentiles. <p>Note: It may take a few minutes until the forecast is shown."),
-                                                 plotOutput("Payroll.EnsembleForecast"),
-                                                 HTML("The code for this model is also on GitHub (see 'About' tab).")
+                                                       Our approach uses the following features: <ul><li>Two forecasts are available, for the change in US Nonfarm Payrolls (m/m) and for US real GDP (q/q). 
+                                                      <li>The forecast use about 20 activity indicators (including ISM Manufacturing, JOLTS data, and regional Fed activity indicators),
+                                                      of which we randomly use 4 as predictors. <li>This process is repeated 250 times to generate the mean forecast, as well as various percentiles of the distribution. 
+                                                                            </ul><p>The code for this model is on GitHub (see 'About' tab). Note: It may take a few minutes until the forecast is shown.<br>"),
+                                                 br(),
+                                                 selectInput("ForecastPooling.Selection",
+                                                             "Select A Variable To Forecast",
+                                                             c("Nonfarm Payrolls", "GDP") ),
+                                                 htmlOutput("EnsembleForecast.Commentary"),
+                                                 plotOutput("EnsembleForecast.Plot")
                                         )
                              ),
                              navbarMenu("Stock Market",
