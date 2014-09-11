@@ -3,6 +3,7 @@ library(shiny)
 library(shinyIncubator)
 
 shinyUI(fluidPage(theme = "bootstrap3.css",
+                  tags$head(includeScript("google-analytics.js")),
                   progressInit(),
                   navbarPage("Economic Dashboard",
                              tabPanel("Overview",
@@ -11,7 +12,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                           htmlOutput("MarketUpdate.Commentary")
                                           ),
                                       mainPanel(
-                                          HTML("<h3>GDP growth in major economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters.<p>Note: This page might take a few seconds to load, if the data is refreshed."),
+                                          HTML("<h3>GDP Growth: History And Projections For Major Economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters.<p>Note: This page might take a few seconds to load, if the data is refreshed."),
                                       plotOutput("Overview.Charts"),
                                       htmlOutput("UI.Date")
                              ))),

@@ -173,7 +173,7 @@ shinyServer(function(input, output, session) {
   output$MarketUpdate.Commentary <- renderText({
     Commentary <- paste0("<b>Market Update (as of ", Last.Update.Time, ")</b><p>")
     Commentary <- paste0(Commentary, "<ul><li><b>Europe:</b> In Frankfurt the DAX closed at ", round(last(GDAXI)[,4],2), ", ", misc.UpDown(last(diff(GDAXI)[,4])), " from the last close. ")
-    #Commentary <- paste0(Commentary, "<li>The euro currently stands at ", round(last(DEXUSEU)[,4],2), ", ", misc.UpDown(last(diff(DEXUSEU)[,4])), " from the last close. ")
+    Commentary <- paste0(Commentary, "<li>The euro currently stands at ", round(last(DEXUSEU),3), ", ", misc.UpDown(last(diff(DEXUSEU))), " from the last close. ")
     Commentary <- paste0(Commentary, "</ul><ul><li><b>Asia:</b> The Nikkei closed at ", round(last(N225)[,4],2), ", ", misc.UpDown(last(diff(N225)[,4])), " points. ")
     Commentary <- paste0(Commentary, 
                          "Hong Kong's Hang Seng closed at ", round(last(HSI)[,4],2), ", ", misc.UpDown(last(diff(HSI)[,4])), " from the last close. ")
