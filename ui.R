@@ -1,3 +1,4 @@
+file.About <- "About.md"
 
 library(shiny)
 library(shinyIncubator)
@@ -12,7 +13,8 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                           htmlOutput("MarketUpdate.Commentary")
                                           ),
                                       mainPanel(
-                                          HTML("<h3>GDP Growth: History And Projections For Major Economies</h3> All data shown as q/q growth rates (annualized). Charts also include naive time-series forecasts for the next 4 quarters.<p>Note: This page might take a few seconds to load, if the data is refreshed."),
+                                          HTML("<h3>GDP Growth: History And Projections For Major Economies</h3> 
+                                               Charts show naive time-series forecasts for the next 4 quarters. All data shown as q/q growth rates (annualized).<p>Note: This page might take a few seconds to load, if the data is refreshed."),
                                       plotOutput("Overview.Charts"),
                                       htmlOutput("UI.Date")
                              ))),
@@ -101,6 +103,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
               The data is taken from <a href='http://research.stlouisfed.org/fred2/'> St. Louis Federal Reserve Bank's FRED database</a> and Yahoo; the CSS theme is SuperHero from <a href='http://bootswatch.com'>Bootswatch</a>. The 
               US Labor Market Analysis is inspired by <a href='http://graphics.thomsonreuters.com/14/yellen/index.html'>Thomson Reuters</a>.<p>
               Future enhancements will include better models, more data, better data visualization, and an automated email notification if new data has been released. <p>
-              The code can be found in <a href='https://github.com/pmaier1971/AutomatedForecastingWithShiny'>my GitHub respository</a>. Please contact me at pmaier1971 (at) gmail.com or <a href='https://www.linkedin.com/pub/philipp-maier/5/966/653'>through my LinkedIn profile</a> if you have questions or suggestions.")
+              The code can be found in <a href='https://github.com/pmaier1971/AutomatedForecastingWithShiny' onclick='ga('send', 'event', 'click', 'link', 'GithubLink', 1)'>my GitHub respository</a>. 
+                                 Please contact me at pmaier1971 (at) gmail.com or <a href='https://www.linkedin.com/pub/philipp-maier/5/966/653' onclick='ga('send', 'event', 'click', 'link', 'LinkedInLink', 1)'>through my LinkedIn profile</a> if you have questions or suggestions.")
                    )                   
 )))

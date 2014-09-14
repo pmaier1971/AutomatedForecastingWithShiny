@@ -11,7 +11,12 @@ library(httr)
 #library(jsonlite)
 #library(RPushbullet)
 #library(mygmailR)
+library(rDrop)
 
+# File Setup####
+load("my_dropbox_credentials.rdata")
+file.InputData <- "https://www.dropbox.com/s/wrfre0as7q7x1sn/InputData.RData?dl=0"
+file.Tracking  <- "https://www.dropbox.com/s/s4zvccv2dvqej7m/TrackingInfo.rda?dl=0"
 
 # misc. functions
 
@@ -31,6 +36,7 @@ misc.growth.monthlydata.to.yy <- function(x){
 shinyServer(function(input, output, session) {
   
   ListOfCodes <- c("SP 500"="^GSPC", 
+                   "NASDAQ" = "^NDX",
                    "Hang Seng" = "^HSI",
                    "Nikkei" = "^N225",
                    "Dax" = "^GDAXI",
@@ -41,14 +47,17 @@ shinyServer(function(input, output, session) {
                    "JP Morgan"="JPM", 
                    "T-Mobile"="TMUS")
   
-  # Test whether we are online
-  test        <- try(getSymbols("GDPC1",src='FRED'))
+  # Test whether we are online - this allows adding code and running the app offline
+  test.online        <- try(getSymbols("GDPC1",src='FRED'))
   
   #load(file="InputData.RData")
-  response <- GET(url = "https://www.dropbox.com/s/wrfre0as7q7x1sn/InputData.RData?dl=0")
+  response <- GET(url = file.InputData)
   load(rawConnection(response$content))
+  tracking <- (GET(url=file.Tracking))
+  load(rawConnection(tracking$content))
   
-  if (!(inherits(test, "try-error"))) {
+  
+  if (!(inherits(test.online, "try-error"))) {
     # We are online. Is the data up-to-date?
     if (Sys.Date() != Last.Update) {
       # Data import
@@ -108,11 +117,11 @@ shinyServer(function(input, output, session) {
       # Some variables need to be transformed
       List.Transformation <- c("US.CPI", "EU.CPI", "US.IP", "CA.IP")
       
-      # withProgress(session, min = 1, max = length(List.Countries), {
-      #  setProgress(message = "Downloading Data")
+      withProgress(session, min = 1, max = length(List.Countries), {
+       setProgress(message = "Downloading Data")
       for (idx.Country in 1:length(List.Countries)){
-        #setProgress(value = idx.Country)
-        #setProgress(detail = "Sorry, this is taking a while")
+        setProgress(value = idx.Country)
+        
         cat("\n   Country: ", List.Countries[idx.Country])
         getSymbols(get(List.Countries[idx.Country]), src="FRED")
         for (idx in 1:length(get(List.Countries[idx.Country]))){
@@ -124,7 +133,7 @@ shinyServer(function(input, output, session) {
           assign(names(get(List.Countries[idx.Country]))[idx], x)
         }
       }
-      #  })
+        })
       
       # Get the market data
       for (i in 1:length(ListOfCodes)){
@@ -150,7 +159,6 @@ shinyServer(function(input, output, session) {
         assign(FC.Name, auto.arima(Data.Series))
       }
       
-      
       cat("\nSaving a new RData file...")
       #pbPost("note", "New RData file saved", "New data found.")
       # send_gmail(subject="Test", body="Test Body", file_private = "gmailR.txt", dir_private = "~/Desktop/")
@@ -169,17 +177,30 @@ shinyServer(function(input, output, session) {
    else if   (x==0)   return("unchanged")
  }
   
-  # Panel Overview
-  output$MarketUpdate.Commentary <- renderText({
-    Commentary <- paste0("<b>Market Update (as of ", Last.Update.Time, ")</b><p>")
-    Commentary <- paste0(Commentary, "<ul><li><b>Europe:</b> In Frankfurt the DAX closed at ", round(last(GDAXI)[,4],2), ", ", misc.UpDown(last(diff(GDAXI)[,4])), " from the last close. ")
-    Commentary <- paste0(Commentary, "<li>The euro currently stands at ", round(last(DEXUSEU),3), ", ", misc.UpDown(last(diff(DEXUSEU))), " from the last close. ")
-    Commentary <- paste0(Commentary, "</ul><ul><li><b>Asia:</b> The Nikkei closed at ", round(last(N225)[,4],2), ", ", misc.UpDown(last(diff(N225)[,4])), " points. ")
+# Market Update####
+ output$MarketUpdate.Commentary <- renderText({
+    Commentary <- paste0("<b>Market Update (", format(Last.Update.Time, "%d %B %Y, %H:%M"), ")</b><p>")
+    Commentary <- paste0(Commentary, "<b>United States:</b><ul><li>The S&P 500 currently stands at ", 
+                         round(last(GSPC)[,4],2), ", ", misc.UpDown(last(diff(GSPC)[,4])), " from the last close. ")
+    Commentary <- paste0(Commentary, "<li>The NASDAQ is at ", 
+                         round(last(GSPC)[,4],2), ", ", misc.UpDown(last(diff(GSPC)[,4])), " points. ")
+    Commentary <- paste0(Commentary, "<li>The US 10-Year Treasury Yield is at ", 
+                         round(last(TNX)[,4],2), " (", misc.UpDown(last(diff(GSPC)[,4])), " points).</ul>")
+    Commentary <- paste0(Commentary, "<b>Europe:</b><ul><li> In Frankfurt the DAX closed at ", round(last(GDAXI)[,4],2), ", ", misc.UpDown(last(diff(GDAXI)[,4])), " from the last close. ")
+    Commentary <- paste0(Commentary, "The London FTSE closed at ", round(last(FTSE)[,4],2), ", ", misc.UpDown(last(diff(FTSE)[,4])), " points. ")
+    Commentary <- paste0(Commentary, "<li>The euro currently stands at ", 
+                         round(last(DEXUSEU),3), ", ", misc.UpDown(last(diff(DEXUSEU))), 
+                         " from the last close; ")
+    Commentary <- paste0(Commentary, "the 10-Year Treasury Yield is at ", 
+                         round(last(IRLTLT01EZM156N),3), " (", misc.UpDown(last(diff(IRLTLT01EZM156N))), 
+                         " points). ")
+    Commentary <- paste0(Commentary, "</ul><b>Asia:</b><ul><li> The Nikkei closed at ", round(last(N225)[,4],2), ", ", misc.UpDown(last(diff(N225)[,4])), " points. ")
     Commentary <- paste0(Commentary, 
                          "Hong Kong's Hang Seng closed at ", round(last(HSI)[,4],2), ", ", misc.UpDown(last(diff(HSI)[,4])), " from the last close. ")
     return(Commentary)
   })
   
+# Panel Overview####
   output$Overview.Charts <-renderPlot({
     par(mfrow=c(2,3))
     for (i in 1:length(List.Countries)){
@@ -198,7 +219,7 @@ shinyServer(function(input, output, session) {
       Chart.Data[length(History),3] <- Chart.Data[length(History),1]
       Chart.Data <- Chart.Data[index(Chart.Data) > Sys.Date()-years(5),]
       
-      plot(Chart.Data[,1], type="l", col="blue", main = List.Countries[i], ylab="", 
+      plot(Chart.Data[,1], type="l", col="blue", main = List.Countries[i], xlab="", ylab="", 
            lwd=2, ylim=range(Chart.Data[,4:7], na.rm = TRUE))  
       lines(Chart.Data[,2], col="red", lty=2)
       segments(index(Chart.Data), Chart.Data[,6], index(Chart.Data), Chart.Data[,7], col="deepskyblue", lwd=7)
@@ -210,7 +231,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  # Panel Country Analysis
+  # Panel Country Analysis####
   
   output$UI.Country.Analysis <- renderUI({
     selectInput("Country.Analysis.Control.Choice", "Select the country", List.Countries, selected=List.Countries[1])
@@ -296,8 +317,8 @@ shinyServer(function(input, output, session) {
     return(Commentary)
   })
   
-  # Panel Detailed Analysis
-  # Panel US Labor Market
+  # Panel Detailed Analysis####
+  # Panel US Labor Market####
   
   US.LaborMarket.Dashboard.Data <- function(){
     Data.Dashboard <- Reduce(function(...) merge(...), list(US.Unemployment, 
@@ -360,7 +381,7 @@ shinyServer(function(input, output, session) {
     
   })
   
-  # Panel Macroeconomic Forecasting
+  # Panel Macroeconomic Forecasting####
   
   # Dynamic UI
   output$UI.Macro.Control <- renderUI({
@@ -474,7 +495,6 @@ shinyServer(function(input, output, session) {
       names(Chart.Data) <- c("History", "Mean", "High", "Low", "Upper", "Lower")
       Chart.Data <- Chart.Data[index(Chart.Data)>=Sys.Date()-years(10),]
       
-      #Plot.Data <- Chart.Data #zoo(Chart.Data[,-1], Chart.Data[,1])
       plot(Chart.Data$History, lwd=1, type="l", ylab="", xlab="", ylim=c(min(Chart.Data, na.rm=TRUE), max(Chart.Data, na.rm=TRUE)), #pch=19,
            main=paste0(input$Variable.Control.Choice, " (black)\nConfidence bands: 85% in blue, 95% in red"))
       lines(Chart.Data$High, col="blue", lwd=2)
@@ -492,23 +512,24 @@ shinyServer(function(input, output, session) {
     return(Commentary.Date)
   })
   
-  misc.EnsembleForecasting <- function(data, NoPredictors, NoReps, Date.Cutoff="2007-01-01"){
-    # Function expects the dependent variable in the first column, and all predicts in the columns that follow
-    NoVars     <- dim(data)[2]
-    idx.Sample <- index(data) >= as.Date(Date.Cutoff)
-    Results    <- matrix(NA, nrow=sum(idx.Sample), ncol=NoReps) 
+# EnsembleForecasting####
+misc.EnsembleForecasting <- function(data, NoPredictors, NoReps, Date.Cutoff="2007-01-01"){
+  # Function expects the dependent variable in the first column, and all predicts in the columns that follow
+  NoVars     <- dim(data)[2]
+  idx.Sample <- index(data) >= as.Date(Date.Cutoff)
+  Results    <- matrix(NA, nrow=sum(idx.Sample), ncol=NoReps) 
+  
+  withProgress(session, min=1, max=NoReps, {
+    setProgress(message = 'Calculation in progress',
+                detail = 'Calculating the Ensemble Forecast')
     
-    withProgress(session, min=1, max=NoReps, {
-      setProgress(message = 'Calculation in progress',
-                  detail = 'Calculating the Ensemble Forecast')
-      
-      for (idx.loop in (1:NoReps)){
-        setProgress(value = idx.loop)
-        VarsSelected <- sample(2:NoVars, NoPredictors, replace=FALSE)
-        Regression   <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
-        Forecast     <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
-        Results[,idx.loop]  <- Forecast$pred
-      }
+    for (idx.loop in (1:NoReps)){
+      setProgress(value = idx.loop)
+      VarsSelected <- sample(2:NoVars, NoPredictors, replace=FALSE)
+      Regression   <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
+      Forecast     <- predict(Regression, newxreg=data[ idx.Sample,VarsSelected], n.ahead=1)
+      Results[,idx.loop]  <- Forecast$pred
+    }
     
     Results.Reduced <- data.frame(Mean = apply(Results, 1, mean, na.rm=TRUE),
                                   t(apply(Results, 1, quantile, probs=c(0.1, 0.25, 0.4, 0.6, 0.75, 0.90), 
@@ -516,21 +537,21 @@ shinyServer(function(input, output, session) {
     Results.Reduced <- zoo(Results.Reduced, index(data)[idx.Sample])
     return(Results.Reduced)
   })
-  }
-  
-  misc.plot.EnsembleForecasting <- function(EnsembleForecast, ChartTitle=""){
-    plot(EnsembleForecast[,1], col="black", lwd=2, 
-         ylim=c(min(EnsembleForecast, na.rm=TRUE), max(EnsembleForecast, na.rm=TRUE)),
-         xlab="", ylab="", main=ChartTitle, 
-         sub="Note: Intervall Ranges: 10%-90%; 25-75%; 40-60%")
-    segments(index(EnsembleForecast), EnsembleForecast[,2], index(EnsembleForecast), EnsembleForecast[,7], lwd=10, col="lightskyblue")
-    segments(index(EnsembleForecast), EnsembleForecast[,3], index(EnsembleForecast), EnsembleForecast[,6], lwd=10, col="dodgerblue")    
-    segments(index(EnsembleForecast), EnsembleForecast[,4], index(EnsembleForecast), EnsembleForecast[,5], lwd=10, col="mediumblue")    
-    lines(EnsembleForecast[,1], col="red", lwd=3)
-  }
-  
-  EnsembleForecast.calc <- reactive({
-    if (input$ForecastPooling.Selection == "GDP") {
+}
+
+misc.plot.EnsembleForecasting <- function(EnsembleForecast, ChartTitle=""){
+  plot(EnsembleForecast[,1], col="black", lwd=2, 
+       ylim=c(min(EnsembleForecast, na.rm=TRUE), max(EnsembleForecast, na.rm=TRUE)),
+       xlab="", ylab="", main=ChartTitle, 
+       sub="Note: Intervall Ranges: 10%-90%; 25-75%; 40-60%")
+  segments(index(EnsembleForecast), EnsembleForecast[,2], index(EnsembleForecast), EnsembleForecast[,7], lwd=10, col="lightskyblue")
+  segments(index(EnsembleForecast), EnsembleForecast[,3], index(EnsembleForecast), EnsembleForecast[,6], lwd=10, col="dodgerblue")    
+  segments(index(EnsembleForecast), EnsembleForecast[,4], index(EnsembleForecast), EnsembleForecast[,5], lwd=10, col="mediumblue")    
+  lines(EnsembleForecast[,1], col="red", lwd=3)
+}
+
+EnsembleForecast.calc <- reactive({
+  if (input$ForecastPooling.Selection == "GDP") {
     Forecast.Data <- Reduce(function(...) merge(...), list( US.Activity.ChicagoFed.Employment,
                                                             US.Activity.ChicagoFed,
                                                             US.Activity.PhillyFed.Current,
@@ -547,62 +568,85 @@ shinyServer(function(input, output, session) {
                                                             US.JOLTS.QuitsRate,
                                                             US.JOLTS.HireRate,
                                                             US.JOLTS.JobOpeningsRate)     )
-    Forecast.Data   <- apply.quarterly(Forecast.Data, mean)
-    index(Forecast.Data) <- index(Forecast.Data) - months(2)
-    Forecast.Data   <- merge(US.GDP.Real.qq, Forecast.Data)
-    } else if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {
-      Forecast.Data <- Reduce(function(...) merge(...), list( US.Payroll - lag(US.Payroll, 1),
-                                                              US.Activity.ChicagoFed.Employment,
-                                                              US.Activity.ChicagoFed,
-                                                              US.Activity.PhillyFed.Current,
-                                                              US.Activity.PhillyFed.Leading,
-                                                              US.Activity.NYFed.Current,
-                                                              US.Activity.NYFed.Leading,
-                                                              US.Activity.NYFed.AvWorkWeek.Current,
-                                                              US.Activity.NYFed.NoEmployees.Current,
-                                                              US.Activity.NYFed.AvWorkWeek.Leading,
-                                                              US.Activity.NYFed.NoEmployees.Leading,
-                                                              US.Activity.SFFed.TechPulse,
-                                                              US.Activity.ISM.NonManufacturing.Employment,
-                                                              US.Activity.ISM.Manufacturing.Employment,
-                                                              US.Activity.ADP - lag(US.Activity.ADP,1),
-                                                              to.monthly(US.Activity.InitialClaims.4W.MA)[,1],
-                                                              to.monthly(US.Activity.InitialClaims)[,1],
-                                                              to.monthly(US.Activity.ContinuedClaims.4W.MA)[,1],
-                                                              to.monthly(US.Activity.ContinuedClaims)[,1],
-                                                              US.JOLTS.QuitsRate,
-                                                              US.JOLTS.HireRate,
-                                                              US.JOLTS.JobOpeningsRate)     )
-    }
-    Forecast.Data   <- Forecast.Data[index(Forecast.Data) >= as.Date("1980-01-01"),]
-    Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=250, Date.Cutoff="2012-01-01")
-    return(Forecast.Result)
-  })
+    Forecast.Data            <- apply.quarterly(Forecast.Data, mean)
+    index(Forecast.Data)     <- as.Date(as.yearqtr(index(Forecast.Data)))
+    Forecast.Data            <- merge(US.GDP.Real.qq, Forecast.Data)
+    Lag.Forecast.Data        <- Forecast.Data
+    index(Lag.Forecast.Data) <- index(Lag.Forecast.Data) + months(3)
+    Forecast.Data            <- merge(Forecast.Data, Lag.Forecast.Data)
+  } else if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {
+    Forecast.Data <- Reduce(function(...) merge(...), list( US.Payroll - lag(US.Payroll, 1),
+                                                            US.Activity.ChicagoFed.Employment,
+                                                            US.Activity.ChicagoFed,
+                                                            US.Activity.PhillyFed.Current,
+                                                            US.Activity.PhillyFed.Leading,
+                                                            US.Activity.NYFed.Current,
+                                                            US.Activity.NYFed.Leading,
+                                                            US.Activity.NYFed.AvWorkWeek.Current,
+                                                            US.Activity.NYFed.NoEmployees.Current,
+                                                            US.Activity.NYFed.AvWorkWeek.Leading,
+                                                            US.Activity.NYFed.NoEmployees.Leading,
+                                                            US.Activity.SFFed.TechPulse,
+                                                            US.Activity.ISM.NonManufacturing.Employment,
+                                                            US.Activity.ISM.Manufacturing.Employment,
+                                                            US.Activity.ADP - lag(US.Activity.ADP,1),
+                                                            to.monthly(US.Activity.InitialClaims.4W.MA)[,1],
+                                                            to.monthly(US.Activity.InitialClaims)[,1],
+                                                            to.monthly(US.Activity.ContinuedClaims.4W.MA)[,1],
+                                                            to.monthly(US.Activity.ContinuedClaims)[,1],
+                                                            US.JOLTS.QuitsRate,
+                                                            US.JOLTS.HireRate,
+                                                            US.JOLTS.JobOpeningsRate)     )
+    Lag.Forecast.Data        <- Forecast.Data
+    index(Lag.Forecast.Data) <- index(Lag.Forecast.Data) + months(1)
+    Forecast.Data            <- merge(Forecast.Data, Lag.Forecast.Data)
+  }
+  Forecast.Data   <- Forecast.Data[index(Forecast.Data) >= as.Date("1980-01-01"),]
+  Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=250, Date.Cutoff="2012-01-01")
   
+  # Save for the tracking table
+  Table.ForecastTracking.Update <- data.frame(ForecastDate = Sys.Date(),
+                                              NewRelease = NA,
+                                              ValueNewRelease = NA,
+                                              ForecastVariable = input$ForecastPooling.Selection,
+                                              ForecastPeriod = end(Forecast.Result),
+                                              ForeastMean = tail(Forecast.Result[,1],1),
+                                              Forecast10P = tail(Forecast.Result[,2],1),
+                                              Forecast25P = tail(Forecast.Result[,3],1),
+                                              Forecast40P = tail(Forecast.Result[,4],1),
+                                              Forecast60P = tail(Forecast.Result[,5],1),
+                                              Forecast75P = tail(Forecast.Result[,6],1),
+                                              Forecast90P = tail(Forecast.Result[,7],1)
+  )
+  if (!exists("Table.ForecastTracking")) Table.ForecastTracking <- Table.ForecastTracking.Update else  Table.ForecastTracking <- rbind(Table.ForecastTracking, Table.ForecastTracking.Update)
+  dropbox_save(dropbox_credentials, Table.ForecastTracking, file='Work/BAC/AutomatedForecastingWithShiny/TrackingInfo.RData')
+  cat("\n    - Forecast saved in Dropbox")
+  return(Forecast.Result)
+})
+
+
+output$EnsembleForecast.Commentary <- renderText({
+  EnsembleForecast.Result <- EnsembleForecast.calc()
+  Commentary <- ""
+  Commentary <- paste0(Commentary, "<ul><li>Based on information available up to ", format(Last.Update, "%A, %d %B %Y"), " in ca. 15 US activity indicators, the pooled forecast for ", input$ForecastPooling.Selection)
+  if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {
+    Commentary <- paste0(Commentary, " for ", format(end(EnsembleForecast.Result), "%B %Y"))      
+  }
+  else if (input$ForecastPooling.Selection == "GDP") {
+    Commentary <- paste0(Commentary, " for ", format(as.yearqtr(end(EnsembleForecast.Result)), "Q%q %Y"))
+  }
+  Commentary <- paste0(Commentary, " is ", round(tail(EnsembleForecast.Result[,1],1),2),"%. ")
+  Commentary <- paste0(Commentary, "<li>The 25%-75% confidence bands around this forecast are ", round(tail(EnsembleForecast.Result[,3],1),2), "% and ",
+                       round(tail(EnsembleForecast.Result[,6],1),2),"%. </ul>")
+  return(Commentary)
+})
+
+output$EnsembleForecast.Plot <- renderPlot({
+  return(misc.plot.EnsembleForecasting(  EnsembleForecast.Result <- EnsembleForecast.calc(), 
+                                         ChartTitle=input$ForecastPooling.Selection))
+})
   
-  output$EnsembleForecast.Commentary <- renderText({
-    EnsembleForecast.Result <- EnsembleForecast.calc()
-    Commentary <- ""
-    Commentary <- paste0(Commentary, "<ul><li>Based on information available up to ", format(Last.Update, "%A, %d %B %Y"), " in ca. 15 US activity indicators, the pooled forecast for ", input$ForecastPooling.Selection)
-    if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {
-      Commentary <- paste0(Commentary, "for ", format(end(EnsembleForecast.Result), "%B %Y"))      
-    }
-    else if (input$ForecastPooling.Selection == "GDP") {
-      Commentary <- paste0(Commentary, "for ", format(as.yearqtr(end(EnsembleForecast.Result)), "Q%q %Y"))
-    }
-    Commentary <- paste0(Commentary, " is ", round(tail(EnsembleForecast.Result[,1],1),2),"%. ")
-    Commentary <- paste0(Commentary, "<li>The 25%-75% confidence bands around this forecast are ", round(tail(EnsembleForecast.Result[,3],1),2), "% and ",
-                         round(tail(EnsembleForecast.Result[,6],1),2),"%. </ul>")
-    return(Commentary)
-  })
-  
-  output$EnsembleForecast.Plot <- renderPlot({
-    return(misc.plot.EnsembleForecasting(  EnsembleForecast.Result <- EnsembleForecast.calc(), 
-                                           ChartTitle=input$ForecastPooling.Selection))
-  })
-  
-  
-  # --------- STOCK MARKET
+  # STOCK MARKET####
   
   
   output$Data.Realtime <- renderTable({
