@@ -603,7 +603,7 @@ EnsembleForecast.calc <- reactive({
   }
   Forecast.Data   <- Forecast.Data[index(Forecast.Data) >= as.Date("1980-01-01"),]
   Forecast.Result <- misc.EnsembleForecasting(data=Forecast.Data, NoPredictors=4, NoReps=250, Date.Cutoff="2012-01-01")
-  
+  Forecast.Result <- na.omit(Forecast.Result)
   # Save for the tracking table
   Table.ForecastTracking.Update <- data.frame(ForecastDate = Sys.Date(),
                                               NewRelease = NA,
@@ -619,7 +619,7 @@ EnsembleForecast.calc <- reactive({
                                               Forecast90P = tail(Forecast.Result[,7],1)
   )
   if (!exists("Table.ForecastTracking")) Table.ForecastTracking <- Table.ForecastTracking.Update else  Table.ForecastTracking <- rbind(Table.ForecastTracking, Table.ForecastTracking.Update)
-  dropbox_save(dropbox_credentials, Table.ForecastTracking, file='Work/BAC/AutomatedForecastingWithShiny/TrackingInfo.RData')
+  dropbox_save(dropbox_credentials, Table.ForecastTracking, file='work/bac/AutomatedForecastingWithShiny/TrackingInfo.rda')
   cat("\n    - Forecast saved in Dropbox")
   return(Forecast.Result)
 })
