@@ -13,7 +13,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                         ),
                                         mainPanel(
                                           HTML("<h3>GDP Growth: History And Projections For Major Economies</h3> 
-                                               Charts show naive time-series forecasts for the next 4 quarters. All data shown as q/q growth rates (annualized).<p>Note: This page will take a few seconds to download the data."),
+                                               Charts show naive time-series forecasts for the next 4 quarters. All data shown as q/q growth rates (annualized).<p>Note: This page will take a few seconds to update the data."),
                                           plotOutput("Overview.Charts"),
                                           htmlOutput("UI.Date")
                                           ))),
@@ -30,12 +30,21 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                       )
                              ),
                              navbarMenu("Detailed Analysis",           
+                                        tabPanel("US Activity Surveys",
+                                                 h3("High-Frequency Surveys of US Economic Activity"),
+                                                 HTML("High-frequency indicators have some interesting properties. <ul><li>They provide an early snapshot of economic activity in different sectors of the US economy. 
+<li>Unlike GDP, which is only published quarterly and can be heavily revised,
+these indicators are released monthly (and data revisions are small). <li>They are survey-based, and may thus exaggerate positive or negative sentiment.</ul><p>We have re-scaled the San Fransisco Fed Tech Pulse by multiplying it by 10. 
+                                                      You can zoom into the charts using the scroll wheel of the mouse or using the date range selector underneath the chart."),
+                                                 htmlOutput("US.ActivityMeasures.Dashboard")
+                                                 #plotOutput("US.ActivityMeasures.Change")
+                                        ),
                                         tabPanel("US Labor Market",
                                                  h3("US Labor Market Indicators: Current Values, Relative to the Worst Point This Cycle"),
                                                  h5("The large charts show the longer-term evolution since 2000; the small charts show progress among different labor market indicators during this recovery/expansion. The cycle is defined as starting in 2008;
                                                     current values are shown relative to the best and worst readings of this indicator during this cycle."),
                                                  plotOutput("US.LaborMarket.Dashboard", height="1000px")
-                                                 ),
+                                        ),
                                         tabPanel("US Housing Market",
                                                  h3("US Housing Market Indicators"),
                                                  plotOutput("US.HousingMarket.Dashboard", height="1000px")
@@ -68,17 +77,24 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                                  )
                                         ),
                                         tabPanel("Ensemble Forecasting",
-                                                 checkboxInput("EnsembleForecastingDescChoice",
-                                                             "Show Model Description", FALSE),
-                                                             
-                                                 conditionalPanel(condition = "input.EnsembleForecastingDescChoice",
-                                                                  includeMarkdown("Description.EnsembleForecasting.md")),
-                                                 selectInput("ForecastPooling.Selection",
-                                                            "Select A Variable To Forecast",
-                                                            c("Nonfarm Payrolls", "GDP") ),
-                                                 htmlOutput("EnsembleForecast.Commentary"),
-                                                 plotOutput("EnsembleForecast.Plot")
-                                                 )
+                                                 sidebarLayout(
+                                                   sidebarPanel(
+                                                     selectInput("ForecastPooling.Selection",
+                                                                 "Select A Variable To Forecast",
+                                                                 c("Nonfarm Payrolls", "GDP") ),
+                                                     htmlOutput("EnsembleForecast.Commentary")
+                                                   ),
+                                                   mainPanel(
+                                                     checkboxInput("EnsembleForecastingDescChoice", "Show Model Description", FALSE),
+                                                     conditionalPanel(condition = "input.EnsembleForecastingDescChoice",
+                                                                      includeMarkdown("Description.EnsembleForecasting.md")),
+                                                     plotOutput("EnsembleForecast.Plot"),
+
+                                                     checkboxInput("EnsembleForecastingUpdateChoice", "Changes Since Last Forecast", FALSE),
+                                                     conditionalPanel(condition = "input.EnsembleForecastingUpdateChoice",
+                                                                      plotOutput("EnsembleForecast.Tracking"),
+                                                                      verbatimTextOutput("Forecast.Tracking"))
+                                                   )))
                                         ),
                              navbarMenu("Stock Market",
                                         tabPanel("Real-Time Data",
