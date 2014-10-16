@@ -106,7 +106,15 @@ shinyServer(function(input, output, session) {
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
                    "US.Unemployment.WageGrowth" = "CES0500000003",
                    "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
-                   "US.SOV.10Y"="DGS10", "US.FSI.Cleveland"="CFSI",
+                   "US.SOV.1Y"="DGS1", 
+                   "US.SOV.2Y"="DGS2", 
+                   "US.SOV.3Y"="DGS3", 
+                   "US.SOV.5Y"="DGS5", 
+                   "US.SOV.7Y"="DGS7", 
+                   "US.SOV.10Y"="DGS10", 
+                   "US.SOV.20Y"="DGS20", 
+                   "US.SOV.30Y"="DGS30", 
+                   "US.FSI.Cleveland"="CFSI",
                    "US.HouseholdDebt" = "HDTGPDUSQ163N",
                    "US.Housing.NewPrivateHousingStarts"="HOUST",
                    "US.Housing.NewPrivateHousingPermits"="PERMIT",
@@ -599,6 +607,74 @@ shinyServer(function(input, output, session) {
     par(op)
   })
   
+  US.InterestRates.Dashboard.Data <- function(){
+    Data.Dashboard <- Reduce(function(...) merge(...), list( US.SOV.1Y, 
+                                                             US.SOV.2Y, 
+                                                             US.SOV.3Y, 
+                                                             US.SOV.5Y, 
+                                                             US.SOV.7Y, 
+                                                             US.SOV.10Y ))
+    return(Data.Dashboard)
+  }
+  
+  output$US.InterestRates.Dashboard <- renderPlot({
+    Data.Rates     <- US.InterestRates.Dashboard.Data()
+    week           <- function(x)format(x, '%Y.W%W')
+    month          <- function(x)format(x, '%Y.M%m')
+    year           <- function(x)format(x, '%Y')
+    Data.Rates.dim <- length(colnames(Data.Rates))
+    
+    Data.Rates.Y <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(15),])
+    
+    Data.Rates[,2:Data.Rates.dim] <- Data.Rates[,2:Data.Rates.dim] - Data.Rates[,1:(Data.Rates.dim-1)]
+    
+    Data.Rates.M <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(5),])
+    Data.Rates.W <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(1),])
+    Data.Rates.D <- na.omit(as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-months(6),]))
+    Data.Rates.W <- aggregate(Data.Rates.W, by=week, FUN=mean, na.rm=TRUE)
+    Data.Rates.M <- aggregate(Data.Rates.M, by=month, FUN=mean, na.rm=TRUE)
+    Data.Rates.Y <- aggregate(Data.Rates.Y, by=year, FUN=mean, na.rm=TRUE)
+    
+    Data.Rates.Names<-c("1Y", "2Y", "3Y", "5Y", "7Y", "10Y") # , "20Y", "30Y")
+    
+    par(mfrow = c(2,2))
+    barplot(Data.Rates.D, col=rainbow(Data.Rates.dim), #cex.main=0.75,
+            main="Treasury Rates (Constant Maturity, Daily Yields in % For The Last 6 Months)")
+    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+    
+    barplot(na.omit(Data.Rates.W), col=rainbow(Data.Rates.dim), #cex.main=0.75,
+            main="Treasury Rates (Constant Maturity, Weekly Average Yields in % For The Last Year)")
+    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+    
+    barplot(Data.Rates.M, col=rainbow(Data.Rates.dim), #cex.main=0.75,
+            main="Treasury Rates (Monthly Average Yield in % For The Last 5 Years)")
+    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+    
+    plot(na.omit(Data.Rates.Y[,Data.Rates.dim]), type="n", col=rainbow(Data.Rates.dim), 
+         main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)", xlab="", ylab="",
+         ylim=c(min(Data.Rates.Y), max(Data.Rates.Y)))
+
+    for (idx in 1:Data.Rates.dim){
+      lines(Data.Rates.Y[,idx], col=tail(rainbow(Data.Rates.dim)[idx],1))
+    }
+    
+#     barplot(na.omit(Data.Rates.Y), col=rainbow(Data.Rates.dim), #cex.main=0.75,
+#             main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)")
+    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+    par(mfrow = c(1,1))
+  })
+  
+output$US.InterestRates.Commentary <- renderText({
+  Commentary <- "US Treasuries are often considered the 'riskless asset' for the US economy, and therefore play a vital role as benchmark interest rates for other asset classes. "
+  Commentary <- paste0(Commentary, "Treasuries are very liquid and heavily traded in secondary markets. A compression in the spread between shorter and longer maturities - i.e. a flattening of the yield curve - indicates that investors gain less (additional) compensation for holding longer-term securities. ")
+  Commentary <- paste0(Commentary, "<p>Below we plot US Treasury Rates at different maturities. ")
+  Commentary <- paste0(Commentary, "On ", format(index(tail(TNX,1)), "%B %d, %Y"), " the following yields were observed at closing: ")
+  Commentary <- paste0(Commentary, "<ul><li> On the short end of the curve, the 1Y closed at ", tail(100*US.SOV.1Y,1)," bps, ", misc.UpDown(last(diff(na.omit(100*US.SOV.5Y)))), " from the last close.")
+  Commentary <- paste0(Commentary, "<li> 5Y and 7Y Treasuries closed at ", tail(US.SOV.5Y,1),"% and ", tail(US.SOV.7Y,1),"%.")
+  Commentary <- paste0(Commentary, "<li> Lastly, on the long end of the curve, the 10Y US Treasury closed at ", tail(100*TNX[,4],1)," bps; ", misc.UpDown(last(diff(100*TNX[,4]))), ".")
+  Commentary <- paste0(Commentary, "</ul> Below we plot US Treasury interest rates and spreads for differt time horizons.")
+  return(Commentary)
+})
   # Panel Macroeconomic Forecasting####
   
   # Dynamic UI

@@ -52,9 +52,12 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                         tabPanel("US Vehicle Sales",
                                                  h3("US Vehicles Sales and Auto Market Indicators"),
                                                  plotOutput("US.AutoMarket.Dashboard", height="1000px")
+                                        ),
+                                        tabPanel("US Treasury Interest Rates",
+                                                 h3("Evolution of US Treasury Constant Maturity Rates  (in %)"),
+                                                 htmlOutput("US.InterestRates.Commentary"),
+                                                 plotOutput("US.InterestRates.Dashboard", height="1000px")
                                         )
-                                        
-                                        
                              ),
                              navbarMenu("Forecasting",
                                         tabPanel("Time Series Forecasting",
