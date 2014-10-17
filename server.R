@@ -62,10 +62,10 @@ shinyServer(function(input, output, session) {
     data.priorFC.GDP  <- (GET(url=file.PriorGDPForecast))
     data.priorFC.NFP  <- (GET(url=file.PriorNFPForecast))
     load(rawConnection(data.input$content))
-    load(rawConnection(forecast.tracking$content))
-    load(rawConnection(data.tracking$content))
-    load(rawConnection(data.priorFC.GDP$content))
-    load(rawConnection(data.priorFC.NFP$content))
+#     load(rawConnection(forecast.tracking$content))
+#     load(rawConnection(data.tracking$content))
+#     load(rawConnection(data.priorFC.GDP$content))
+#     load(rawConnection(data.priorFC.NFP$content))
     Table.DataTracking.Previous <- Table.DataTracking.Update # Save previous table
     
     # Is the data up-to-date?
@@ -232,7 +232,7 @@ shinyServer(function(input, output, session) {
     }
     
     # Get the market data
-    cat("   -> Downloading stock market data")
+    cat("\n   --> Downloading stock market data")
     for (i in 1:length(ListOfCodes)){
       getSymbols(ListOfCodes[i], src='yahoo')
     }  
@@ -780,7 +780,7 @@ output$US.InterestRates.Commentary <- renderText({
         Forecast = forecast(Regression.Output()[[idx.model]], h=52)
         Forecast.index  <- seq(start(Regression.Data()), end(Regression.Data()) + weeks(52), by="1 week")
       }
-      #browser()
+      
       Chart.Data  <- zoo(, Forecast.index)
       Chart.Data  <- merge(Chart.Data, as.zoo(Regression.Data()))
       Chart.Data  <- merge(Chart.Data, zoo(data.frame(Forecast), 
@@ -822,7 +822,7 @@ output$US.InterestRates.Commentary <- renderText({
       for (idx.loop in (1:NoReps)){
        setProgress(value = idx.loop)
         VarsSelected   <- sample(2:NoVars, NoPredictors, replace=FALSE)
-       Regression     <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
+       #Regression     <- auto.arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], allowdrift = FALSE)
        Regression     <- Arima(data[!idx.Sample,1], xreg=data[!idx.Sample,VarsSelected], order=c(1,0,0))
        Regression.fit <- fitted(Regression)
        
@@ -841,8 +841,8 @@ output$US.InterestRates.Commentary <- renderText({
   }
   
   misc.plot.EnsembleForecasting <- function(EnsembleForecast, ChartTitle=""){
-    if (dim(EnsembleForecast)[2]<=7) SubTitle <- "Note: Red = Mean Forecast; Intervall Ranges: 10%-90%; 25-75%; 40-60%"
-    if (dim(EnsembleForecast)[2]>7) SubTitle <- "Note: Green=Actuals; Red = Mean Forecast; Intervall Ranges: 10%-90%; 25-75%; 40-60%"
+    if (dim(EnsembleForecast)[2]<=7) SubTitle <- "Note: Red = Mean Forecast; Interval Ranges: 10%-90%; 25-75%; 40-60%"
+    if (dim(EnsembleForecast)[2]>7) SubTitle <- "Note: Green=Actuals; Red = Mean Forecast; Interval Ranges: 10%-90%; 25-75%; 40-60%"
     
     plot(EnsembleForecast[,1], col="black", lwd=2, 
          ylim=c(min(EnsembleForecast, na.rm=TRUE), max(EnsembleForecast, na.rm=TRUE)),
@@ -978,17 +978,17 @@ output$US.InterestRates.Commentary <- renderText({
   })
   
   output$Forecast.Tracking <- renderPrint({
-    Table.Change.Print        <- Table.Change[,-1]
-    names(Table.Change.Print) <- c("Indicator", "Last Change", "Last Value", "Prior Value")
-    Table.Change.Print[,3:4]  <-round(Table.Change.Print[,3:4],2)
-    if (Data.Change)  return(print(Table.Change.Print, row.names=FALSE)) else return(NULL)
+    if (input$ForecastPooling.Selection == "GDP") Table.Change.Print <- tail(Table.ForecastTracking.GDP,5)[,c(1:3,6)]
+    if (input$ForecastPooling.Selection == "Nonfarm Payrolls") Table.Change.Print <- tail(Table.ForecastTracking.NFP,5)[,c(1:3,6)]
+    Table.Change.Print[,4]       <-round(Table.Change.Print[,4],2)
+    rownames(Table.Change.Print) <- NULL
+    colnames(Table.Change.Print) <- c("Date", "Indicator", "Value", "Forecast")
+    return(Table.Change.Print)
   })
   
   output$EnsembleForecast.Commentary <- renderText({
-    #input$goButton
-    #isolate( 
-      EnsembleForecast.Result <- EnsembleForecast.calc()
-    #)
+    EnsembleForecast.Result <- EnsembleForecast.calc()
+    browser()
     Commentary <- ""
     Commentary <- paste0(Commentary, "<ul><li>Based on information available up to ", format(Last.Update, "%A, %d %B %Y"), " in ca. 15 US activity indicators, the pooled forecast for ", input$ForecastPooling.Selection)
     if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {
@@ -1004,26 +1004,16 @@ output$US.InterestRates.Commentary <- renderText({
   })
   
   output$EnsembleForecast.Plot <- renderPlot({
-    #input$goButton
-    #isolate( 
     return(misc.plot.EnsembleForecasting(  EnsembleForecast.Result <- EnsembleForecast.calc(), 
                                            ChartTitle=input$ForecastPooling.Selection))
-    #)
   })
   
   output$EnsembleForecast.Tracking <- renderPlot({
-    #input$goButton
-    #isolate(
-    Forecast.Variable <- input$ForecastPooling.Selection
-    #)
-    if (Forecast.Variable == "GDP")              {
-      Chart.Data <- subset(Table.ForecastTracking, ForecastVariable == "GDP")
-    }
-    if (Forecast.Variable == "Nonfarm Payrolls") {
-      Chart.Data <- subset(Table.ForecastTracking, ForecastVariable == "Nonfarm Payrolls")
-    }
+    cat("\n       Show forecast tracking chart")
+    if (input$ForecastPooling.Selection == "GDP") Chart.Data <- Table.ForecastTracking.GDP
+    if (input$ForecastPooling.Selection == "Nonfarm Payrolls")Chart.Data <- Table.ForecastTracking.NFP
     Chart.Data <- subset(Chart.Data, ForecastPeriod == max(ForecastPeriod))
-    Chart.Data <- zoo(Chart.Data[,6:12], Chart.Data[,1])
+    suppressWarnings(Chart.Data <- zoo(Chart.Data[,6:12], Chart.Data[,1]))
     return(misc.plot.EnsembleForecasting(Chart.Data, ChartTitle=paste0("Forecast Tracking for ", input$ForecastPooling.Selection)))
   })
   

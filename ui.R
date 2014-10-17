@@ -9,8 +9,10 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                              tabPanel("Overview",
                                       sidebarLayout(
                                         sidebarPanel(    
+                                          HTML("<a href='https://twitter.com/EconomicsShiny' class='twitter-follow-button' data-show-count='false'>Follow @EconomicsShiny</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>"),
                                           htmlOutput("MarketUpdate.Commentary")
-                                        ),
+                                          ),
                                         mainPanel(
                                           HTML("<h3>GDP Growth: History And Projections For Major Economies</h3> 
                                                Charts show naive time-series forecasts for the next 4 quarters. All data shown as q/q growth rates (annualized).<p>Note: This page will take a few seconds to update the data."),
@@ -88,7 +90,9 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                      htmlOutput("EnsembleForecast.Commentary")
                                                    ),
                                                    mainPanel(
+                                                     HTML("<h3>Ensemble Forecasting For Nonfarm Payrolls and GDP</h3>"),
                                                      checkboxInput("EnsembleForecastingDescChoice", "Show Model Description", FALSE),
+                                                     HTML("<p>Below the in-sample fit; the box on the left provides details on the forecast for the next data release. The checkbox underneath the chart toggles the tracking information, i.e. how the forecast changed in response to new data."),
                                                      conditionalPanel(condition = "input.EnsembleForecastingDescChoice",
                                                                       includeMarkdown("Description.EnsembleForecasting.md")),
                                                      plotOutput("EnsembleForecast.Plot"),
