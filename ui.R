@@ -49,10 +49,12 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                         ),
                                         tabPanel("US Housing Market",
                                                  h3("US Housing Market Indicators"),
+                                                 checkboxInput("UIHousingDashboardHistoryControl", "Show More History", value=FALSE),
                                                  plotOutput("US.HousingMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Vehicle Sales",
                                                  h3("US Vehicles Sales and Auto Market Indicators"),
+                                                 checkboxInput("UIAutoDashboardHistoryControl", "Show More History", value=FALSE),
                                                  plotOutput("US.AutoMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Treasury Interest Rates",

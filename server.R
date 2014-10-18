@@ -556,7 +556,7 @@ shinyServer(function(input, output, session) {
   
   output$US.HousingMarket.Dashboard <- renderPlot({
     Data <- as.zoo(US.HousingMarket.Dashboard.Data())
-    Data <- Data[index(Data)>"1994-12-01",]
+    if (input$UIHousingDashboardHistoryControl) Data <- Data[index(Data)>(Sys.Date() - years(20)),] else Data <- Data[index(Data)>(Sys.Date() - years(5)),]
     
     Chart.Layout <- matrix(c(1,2,3,4,5,6,7,8), ncol=2, byrow=TRUE)
     layout(Chart.Layout)
@@ -565,6 +565,7 @@ shinyServer(function(input, output, session) {
     for (idx in 1:ncol(Data)) {
       Chart.Title <- names(Data)[idx]
       plot(Data[,idx], col="blue", type="l", lwd = 2, main=Chart.Title, ylab="", xlab="")
+      lines(rollmean(Data[,idx],k=6, align="right"), col="red", lty=2)
     }
     par(op)
   })
@@ -593,7 +594,7 @@ shinyServer(function(input, output, session) {
   
   output$US.AutoMarket.Dashboard <- renderPlot({
     Data <- as.zoo(US.AutoMarket.Dashboard.Data())
-    Data <- Data[index(Data)>"1994-12-01",]
+    if (input$UIAutoDashboardHistoryControl) Data <- Data[index(Data)>(Sys.Date() - years(20)),] else Data <- Data[index(Data)>(Sys.Date() - years(5)),]
     
     Chart.Layout <- matrix(c(1,2,3,4,5,6), ncol=2, byrow=TRUE)
     layout(Chart.Layout)
@@ -603,6 +604,7 @@ shinyServer(function(input, output, session) {
       Chart.Title <- names(Data)[idx]
       miss <- !is.na(Data[,idx])
       plot(Data[miss,idx], col="blue", type="l", main=Chart.Title, ylab="", xlab="")
+      lines(rollmean(Data[,idx],k=6, align="right"), col="red", lty=2)
     }
     par(op)
   })
