@@ -566,6 +566,7 @@ shinyServer(function(input, output, session) {
       Chart.Title <- names(Data)[idx]
       plot(Data[,idx], col="blue", type="l", lwd = 2, main=Chart.Title, ylab="", xlab="")
       lines(rollmean(Data[,idx],k=6, align="right"), col="red", lty=2)
+      legend("bottomleft", legend=c("Raw Data", "6 Month Moving Average"), fill=c("blue", "red"))
     }
     par(op)
   })
@@ -604,7 +605,10 @@ shinyServer(function(input, output, session) {
       Chart.Title <- names(Data)[idx]
       miss <- !is.na(Data[,idx])
       plot(Data[miss,idx], col="blue", type="l", main=Chart.Title, ylab="", xlab="")
-      lines(rollmean(Data[,idx],k=6, align="right"), col="red", lty=2)
+      if (idx <= ncol(Data) -2) {
+        lines(rollmean(Data[,idx],k=6, align="right"), col="red", lty=2)
+        legend("topleft", legend=c("Raw Data", "6 Month Moving Average"), fill=c("blue", "red"))
+      }
     }
     par(op)
   })
@@ -990,7 +994,6 @@ output$US.InterestRates.Commentary <- renderText({
   
   output$EnsembleForecast.Commentary <- renderText({
     EnsembleForecast.Result <- EnsembleForecast.calc()
-    browser()
     Commentary <- ""
     Commentary <- paste0(Commentary, "<ul><li>Based on information available up to ", format(Last.Update, "%A, %d %B %Y"), " in ca. 15 US activity indicators, the pooled forecast for ", input$ForecastPooling.Selection)
     if (input$ForecastPooling.Selection == "Nonfarm Payrolls") {

@@ -1,6 +1,6 @@
 Automated Forecasting With R/shiny
 -----------------------------------
-v. 0.7
+v. 0.75
 
 This project is still in an early stage. It was developed in my spare time as tool to pull macroeconomic data, visualize it, and illustrate some simple forecasting techniques. All is done with R/RStudio/shiny.
 
@@ -11,6 +11,8 @@ Some of the features currently implemented are:
 + Simple forecasts illustrate possible ranges for future macroeconomic outcomes;
 
 + Dropbox integration allows tracking updates to forecasts;
+
++ Twitter integration - done with a separate process - automatically posts on Twitter (https://twitter.com/EconomicsShiny) if new data is released;
 
 + The tool is fully automated; the data is automatically refreshed and the commentary is auto-generated.
 
