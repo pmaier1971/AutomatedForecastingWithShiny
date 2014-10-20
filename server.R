@@ -681,6 +681,32 @@ output$US.InterestRates.Commentary <- renderText({
   Commentary <- paste0(Commentary, "</ul> Below we plot US Treasury interest rates and spreads for differt time horizons.")
   return(Commentary)
 })
+
+output$International.Inflation.Dashboard <- renderPlot({
+  
+  Inflation.Comparison.Data <- Inflation.Comparison.Data[index(Inflation.Comparison.Data)>=Sys.Date()-years(input$InflationComparisonChoice)]
+ # Inflation.Comparison.Data <- apply(Inflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+ # Inflation.Comparison.Data <- cbind(Inflation.Comparison.Data, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data)-1))))
+ 
+ Inflation.Comparison.Data.Chart <- apply(Inflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+ Inflation.Comparison.Data.Chart <- cbind(Inflation.Comparison.Data.Chart, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data.Chart)-1))))
+ 
+ plot(as.zoo(Inflation.Comparison.Data.Chart[,1]), main = "Cumulative Change in the Price Level (Headline)", type = "n",
+      xaxt="n", xlab="", ylab="", ylim=c(min(Inflation.Comparison.Data.Chart, na.rm=TRUE), max(Inflation.Comparison.Data.Chart, na.rm=TRUE)))
+ axis(1, at=row(Inflation.Comparison.Data[,1]), label = index(Inflation.Comparison.Data),
+      col.axis="black", cex.axis=0.7)
+ line.color <- rainbow(ncol(Inflation.Comparison.Data.Chart))
+ for (idx in 1:ncol(Inflation.Comparison.Data.Chart)){
+   if (idx == ncol(Inflation.Comparison.Data.Chart)) {
+     lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2, lty=2)
+   } else {
+     lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2)
+   }
+ }
+ legend("topleft", legend=c("United States", "Euro Area", "United Kingdom", "Japan", "2% Trend"), fill=rainbow(idx), cex=0.75) 
+ 
+})
+
   # Panel Macroeconomic Forecasting####
   
   # Dynamic UI
