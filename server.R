@@ -34,7 +34,6 @@ misc.growth.monthlydata.to.yy <- function(x){
   x <- 100*log(x / lag(x, 12))
 }
 
-
 shinyServer(function(input, output, session) {
   
   ListOfCodes <- c("SP 500"="^GSPC", 
@@ -105,7 +104,7 @@ shinyServer(function(input, output, session) {
                    "US.JOLTS.HireRate" = "JTSHIR",
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
                    "US.Unemployment.WageGrowth" = "CES0500000003",
-                   "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFESL",
+                   "US.CPI.Headline"="CPIAUCSL", "US.CPI.Core"="CPILFENS",
                    "US.SOV.1Y"="DGS1", 
                    "US.SOV.2Y"="DGS2", 
                    "US.SOV.3Y"="DGS3", 
@@ -124,6 +123,10 @@ shinyServer(function(input, output, session) {
                    "US.Housing.NewPrivate2UnitCompleted"="COMPU24USA",
                    "US.Housing.NewPrivate5UnitCompleted"="COMPU5MUNSA",
                    "US.Housing.30YMortgageRate"="MORTG",
+                   "US.Housing.NewHomeSales" = "HSN1F",
+                   "US.Housing.ExistingHomeSales" = "EXHOSLUSM495S",
+                   "US.Housing.MonthlySupply"="MSACSR",
+                   "US.Housing.AllTransactionsPriceIndex"="USSTHPI",
                    "US.Auto.Autosales" = "ALTSALES",
                    "US.Auto.MilesTraveled" = "M12MTVUSM227NFWA",
                    "US.Auto.FinanceCosts" = "TERMCBAUTO48NS",
@@ -131,7 +134,7 @@ shinyServer(function(input, output, session) {
                    "US.Auto.InventorySalesRatio" = "AISRSA"
       )
       Data.EU <- c("EU.GDP.Real"="EUNGDP", "EU.Unemployment"="LRHUTTTTEZM156S",
-                   "EU.CPI.Headline"="CP0000EZ17M086NEST", "EU.CPI.Core"="CPHPLA01EZM661N",
+                   "EU.CPI.Headline"="CP0000EZ17M086NEST", "EU.CPI.Core"="00XESEEZ17M086NEST",
                    "EU.SOV.10Y"="IRLTLT01EZM156N", "FX.EU.USD"="DEXUSEU", "FX.EU.Effective"="RBXMBIS",
                    "EU.Survey.ConsumerConfidence.Expectations"="CSESFT02EZM460S",
                    "EU.Survey.ConsumerConfidence"="CSCICP02EZM460S",
@@ -142,9 +145,13 @@ shinyServer(function(input, output, session) {
       Data.CA <- c("CA.GDP.Real"="NAEXKP01CAQ189S", "CA.CPI.Headline"="CANCPIALLMINMEI", 
                    "CA.CPI.Core"="CANCPICORMINMEI", "FX.CA.USD"="EXCAUS", "FX.CA.Effective"="RBCABIS",
                    "CA.HouseholdDebt" = "HDTGPDCAQ163N")
+      Data.JP <- c("JP.CPI.Headline" = "JPNCPIALLMINMEI", 
+                   "JP.CPI.Core" = "JPNCPICORMINMEI",
+                   "JP.GDP.Real" = "NAEXKP01JPQ661S")
+    
       Data.MarketUpdate <- c("Market.Gold"="GOLDAMGBD228NLBM"       ) # To be used later
       
-      List.Countries   <- c("Data.US", "Data.EU", "Data.UK", "Data.CA")
+      List.Countries   <- c("Data.US", "Data.EU", "Data.UK", "Data.CA", "Data.JP")
       max.DataDownload <- 0
       for (idx in 1:length(List.Countries)){
         max.DataDownload <- max.DataDownload + length(get(List.Countries[idx]))
@@ -682,18 +689,28 @@ output$US.InterestRates.Commentary <- renderText({
   return(Commentary)
 })
 
+# HTML <- GET(url="https://dl.dropboxusercontent.com/s/rb0cnyfiz2fgdaw/hello.html")
+# dropbox.html <-content(HTML, as="text")
+# 
+
+InternationalInflation.HTML <- GET(url="https://www.dropbox.com/s/xni9gh5j2czblcf/Inflation.html?dl=0")
+InternationalInflation.HTML <-content(InternationalInflation.HTML, as="text")
+
+
+output$International.InflationAnalysis.Dashboard <- renderText({InternationalInflation.HTML})
+
 output$International.Inflation.Dashboard <- renderPlot({
   
-  Inflation.Comparison.Data <- Inflation.Comparison.Data[index(Inflation.Comparison.Data)>=Sys.Date()-years(input$InflationComparisonChoice)]
- # Inflation.Comparison.Data <- apply(Inflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
- # Inflation.Comparison.Data <- cbind(Inflation.Comparison.Data, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data)-1))))
+  CoreInflation.Comparison.Data <- CoreInflation.Comparison.Data[index(CoreInflation.Comparison.Data)>=Sys.Date()-years(input$InflationComparisonChoice)]
+ # CoreInflation.Comparison.Data <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+ # CoreInflation.Comparison.Data <- cbind(CoreInflation.Comparison.Data, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(CoreInflation.Comparison.Data)-1))))
  
- Inflation.Comparison.Data.Chart <- apply(Inflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+ Inflation.Comparison.Data.Chart <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
  Inflation.Comparison.Data.Chart <- cbind(Inflation.Comparison.Data.Chart, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data.Chart)-1))))
  
  plot(as.zoo(Inflation.Comparison.Data.Chart[,1]), main = "Cumulative Change in the Price Level (Headline)", type = "n",
       xaxt="n", xlab="", ylab="", ylim=c(min(Inflation.Comparison.Data.Chart, na.rm=TRUE), max(Inflation.Comparison.Data.Chart, na.rm=TRUE)))
- axis(1, at=row(Inflation.Comparison.Data[,1]), label = index(Inflation.Comparison.Data),
+ axis(1, at=row(CoreInflation.Comparison.Data[,1]), label = index(CoreInflation.Comparison.Data),
       col.axis="black", cex.axis=0.7)
  line.color <- rainbow(ncol(Inflation.Comparison.Data.Chart))
  for (idx in 1:ncol(Inflation.Comparison.Data.Chart)){

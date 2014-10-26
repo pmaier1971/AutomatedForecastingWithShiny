@@ -3,7 +3,7 @@ library(shinyIncubator)
 library(rmarkdown)
 library(rDrop)
 
-shinyUI(fluidPage(theme = "bootstrap3.css",
+shinyUI(fluidPage(#theme = "bootstrap3.css",
                   tags$head(includeScript("google-analytics.js")),
                   progressInit(),
                   navbarPage("Economic Dashboard",
@@ -20,6 +20,9 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                           plotOutput("Overview.Charts"),
                                           htmlOutput("UI.Date")
                                           ))),
+                             tabPanel("What's New?",
+                                      HTML("<a class='twitter-timeline' href='https://twitter.com/EconomicsShiny' data-widget-id='526196846738165760'>Tweets by @EconomicsShiny</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','twitter-wjs');</script>")
+                             ),
                              tabPanel("Country View",
                                       sidebarLayout(
                                         sidebarPanel(
@@ -32,7 +35,7 @@ shinyUI(fluidPage(theme = "bootstrap3.css",
                                         )
                                       )
                              ),
-                             navbarMenu("Detailed Analysis",  
+                             navbarMenu("Detailed Analysis", 
                                         tabPanel("US Activity Surveys",
                                                  h3("High-Frequency Surveys of US Economic Activity"),
                                                  HTML("High-frequency indicators have some interesting properties. <ul><li>They provide an early snapshot of economic activity in different sectors of the US economy. 
@@ -64,18 +67,21 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                  plotOutput("US.InterestRates.Dashboard", height="1000px")
                                         ),
                                         tabPanel("International Inflation Comparison",
-                                                 sidebarLayout(
-                                                   sidebarPanel(
-                                                     selectInput("InflationComparisonChoice", "Select A Period",
-                                                                 c("Over The Past 5 Years" = 5, 
-                                                                   "Over The Past 2 Years" = 2, 
-                                                                   "Over The Past Year" = 1))
-                                                   ),
-                                                   mainPanel(
-                                                     h3("International Inflation Comparison"),
-                                                     HTML("Which country had has the highest headline inflation rate?<p>"),
-                                                     plotOutput("International.Inflation.Dashboard")
-                                                   ))
+                                                 htmlOutput("International.InflationAnalysis.Dashboard")
+                                                 #                                         ),
+                                                 #                                         tabPanel("International Inflation Comparison",
+                                                 #                                                  sidebarLayout(
+                                                 #                                                    sidebarPanel(
+                                                 #                                                      selectInput("InflationComparisonChoice", "Select A Period",
+                                                 #                                                                  c("Over The Past 5 Years" = 5, 
+                                                 #                                                                    "Over The Past 2 Years" = 2, 
+                                                 #                                                                    "Over The Past Year" = 1))
+                                                 #                                                    ),
+                                                 #                                                    mainPanel(
+                                                 #                                                      h3("International Inflation Comparison"),
+                                                 #                                                      HTML("Which country had has the highest headline inflation rate?<p>"),
+                                                 #                                                      plotOutput("International.Inflation.Dashboard")
+                                                 #                                                    ))
                                         )
                              ),
                              navbarMenu("Forecasting",
