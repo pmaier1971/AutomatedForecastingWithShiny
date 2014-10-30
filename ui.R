@@ -3,6 +3,8 @@ library(shinyIncubator)
 library(rmarkdown)
 library(rDrop)
 
+TwitterString <- "<a class='twitter-timeline' href='https://twitter.com/EconomicsShiny' data-widget-id='526196846738165760'>Tweets by @EconomicsShiny</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','twitter-wjs');</script>"
+
 shinyUI(fluidPage(#theme = "bootstrap3.css",
                   tags$head(includeScript("google-analytics.js")),
                   progressInit(),
@@ -21,7 +23,7 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                           htmlOutput("UI.Date")
                                           ))),
                              tabPanel("What's New?",
-                                      HTML("<a class='twitter-timeline' href='https://twitter.com/EconomicsShiny' data-widget-id='526196846738165760'>Tweets by @EconomicsShiny</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','twitter-wjs');</script>")
+                                      HTML(TwitterString)
                              ),
                              tabPanel("Country View",
                                       sidebarLayout(

@@ -15,7 +15,7 @@ Some of the features currently implemented are:
 + The tool is fully automated; the data is automatically refreshed and the commentary is auto-generated.
 
 
-The data is taken from <a href='http://research.stlouisfed.org/fred2/'> St. Louis Federal Reserve Bank's FRED database</a> and Yahoo; the CSS theme is SuperHero from <a href='http://bootswatch.com'>Bootswatch</a>. The US Labor Market Analysis is inspired by <a href='http://graphics.thomsonreuters.com/14/yellen/index.html'>Thomson Reuters</a>.
+The data is taken from <a href='http://research.stlouisfed.org/fred2/'> St. Louis Federal Reserve Bank's FRED database</a> and Yahoo. Previous versions had the CSS theme is SuperHero from <a href='http://bootswatch.com'>Bootswatch</a>. The US Labor Market Analysis is inspired by <a href='http://graphics.thomsonreuters.com/14/yellen/index.html'>Thomson Reuters</a>.
 
 Future enhancements will include better models, more data, better data visualization, and an automated email notification if new data has been released. Twitter integration is run from my local machine, as I found this to be more stable.
 

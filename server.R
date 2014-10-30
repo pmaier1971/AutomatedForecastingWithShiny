@@ -140,7 +140,7 @@ shinyServer(function(input, output, session) {
                    "EU.Survey.ConsumerConfidence"="CSCICP02EZM460S",
                    "EU.Survey.ManufacturingConfidence"="BSCICP02EZM460S",
                    "EU.Survey.CapacityUtilization"="BSCURT02EZQ160S")
-      Data.UK <- c("UK.GDP.Real"="UKNGDP", "UK.CPI.Headline"="CPALTT01GBQ657N", "UK.CPI.Core"="GBRCPICORMINMEI",
+      Data.UK <- c("UK.GDP.Real"="UKNGDP", "UK.CPI.Headline"="CP0000GBM086NEST", "UK.CPI.Core"="GBRCPICORMINMEI",
                    "UK.Unemployment"="LMUNRRTTGBM156S", "FX.UK.USD"="DEXUSUK")
       Data.CA <- c("CA.GDP.Real"="NAEXKP01CAQ189S", "CA.CPI.Headline"="CANCPIALLMINMEI", 
                    "CA.CPI.Core"="CANCPICORMINMEI", "FX.CA.USD"="EXCAUS", "FX.CA.Effective"="RBCABIS",
@@ -160,7 +160,8 @@ shinyServer(function(input, output, session) {
       # Assign names
       # Some variables need to be transformed
       List.Transformation <- c("US.CPI.Core", "US.CPI.Headline", "EU.CPI.Headline", "EU.CPI.Core", 
-                               "US.IP", "CA.IP", "UK.CPI.Core", "CA.CPI.Headline")
+                               "US.IP", "CA.IP", "UK.CPI.Headline", "UK.CPI.Core", "CA.CPI.Headline", "CA.CPI.Core",
+                               "JP.CPI.Headline", "JP.CPI.Core")
       
       withProgress(session, min = 1, max = max.DataDownload+10, {
         setProgress(message = "Downloading Data")
@@ -195,7 +196,7 @@ shinyServer(function(input, output, session) {
         }
       })
        
-      List.Countries <- c("US", "EU", "UK", "CA") #"CN"
+      List.Countries <- c("US", "EU", "UK", "CA", "JP") #"CN"
       List.Variables <- ls()
       
       
@@ -1021,7 +1022,7 @@ output$International.Inflation.Dashboard <- renderPlot({
     } else {
       if (Forecast.Selection == "GDP")              Forecast.Result <- Prior.ForecastResult.GDP
       if (Forecast.Selection == "Nonfarm Payrolls") Forecast.Result <- Prior.ForecastResult.NFP
-      cat("\n     --> Using forecast results stored previously")
+      cat("\n   --> Using forecast results stored previously")
     }
     return(Forecast.Result)
   })
