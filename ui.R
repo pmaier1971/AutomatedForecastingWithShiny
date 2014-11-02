@@ -122,31 +122,28 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                      conditionalPanel(condition = "input.EnsembleForecastingDescChoice",
                                                                       includeMarkdown("Description.EnsembleForecasting.md")),
                                                      plotOutput("EnsembleForecast.Plot"),
-
+                                                     
                                                      checkboxInput("EnsembleForecastingUpdateChoice", "Changes Since Last Forecast", FALSE),
                                                      conditionalPanel(condition = "input.EnsembleForecastingUpdateChoice",
                                                                       plotOutput("EnsembleForecast.Tracking"),
                                                                       verbatimTextOutput("Forecast.Tracking"))
                                                    )))
+                             ),
+                             tabPanel("Stock Market",
+                                      sidebarLayout(
+                                        sidebarPanel(
+                                          uiOutput("StockSelector"),
+                                          h5("Near-Real Time Quotes: Selected Stocks"),
+                                          tableOutput("Data.Realtime")
                                         ),
-                             navbarMenu("Stock Market",
-                                        tabPanel("Real-Time Data",
-                                                 tableOutput("Data.Realtime")
-                                        ),
-                                        tabPanel("Historical Data",
-                                                 sidebarLayout(
-                                                   sidebarPanel(
-                                                     uiOutput("StockSelector")
-                                                   ),
-                                                   mainPanel(
-                                                     plotOutput("TestPlot"),
-                                                     
-                                                     tableOutput("LatestValue")
-                                                   )
-                                                 )
+                                        mainPanel(
+                                          plotOutput("TestPlot", height = "750px"),
+                                          h5("Historical Performance (Last 10 Trading Days):"),
+                                          tableOutput("LatestValue")
                                         )
+                                      )
                              ),
                              tabPanel("About",
-                                     includeMarkdown("About.md")
+                                      includeMarkdown("About.md")
                              )                   
                              )))

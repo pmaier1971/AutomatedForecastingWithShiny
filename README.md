@@ -14,7 +14,9 @@ Some of the features currently implemented are:
 
 + Twitter integration - done with a separate process - automatically posts on Twitter (https://twitter.com/EconomicsShiny) if new data is released;
 
-+ The tool is fully automated; the data is automatically refreshed and the commentary is auto-generated. Note that since v. 0.7 increased used is made of a separate (local) process to generate a data file, as it took simply too long to download the data "on the fly".
++ The tool is fully automated; the data is automatically refreshed and the commentary is auto-generated. 
+
++ Note that since v. 0.7 increased used is made of a separate (local) process to generate a data file, as it took simply too long to download the data "on the fly". If anyone's interested in the HTML files used under the tab "Detailed Analysis", feel free to contact me.
 
 Future enhancements will explore a richer data environment with better forecasting models, and better visual presentation of the data.
 

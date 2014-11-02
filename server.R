@@ -1073,7 +1073,7 @@ output$International.Inflation.Dashboard <- renderPlot({
   
   output$Data.Realtime <- renderTable({
     data <- getQuote(ListOfCodes)
-    data <- data.frame((names(ListOfCodes)), data)
+    data <- data.frame((names(ListOfCodes)), data[,2:3])
     rownames(data) <- NULL
     colnames(data)[1]<-" "
     return(data)
@@ -1086,8 +1086,8 @@ output$International.Inflation.Dashboard <- renderPlot({
   output$TestPlot <- renderPlot({
     Stock.Selected <- input$StockSelectorChoice
     Stock.Selected <- get(gsub("\\^", "", ListOfCodes[grep(Stock.Selected, names(ListOfCodes))]))
-    plot(Stock.Selected, main=input$StockSelectorChoice)
-    
+    chartSeries(Stock.Selected, name=paste(input$StockSelectorChoice, " (Closing)"),theme=chartTheme('white'))
+    addMACD()
   })
   
   output$LatestValue <- renderTable({
@@ -1096,6 +1096,7 @@ output$International.Inflation.Dashboard <- renderPlot({
     Stock.Value    <- tail(Stock.Selected, 10)
     Stock.Info     <- data.frame(Period = as.character(index(Stock.Value)), Closing = Stock.Value[,4],
                                  Volume = Stock.Value[,5])
+    names(Stock.Info) <- c("Period", "Closing", "Volume")
     rownames(Stock.Info) <- NULL
     return(Stock.Info)
   })
