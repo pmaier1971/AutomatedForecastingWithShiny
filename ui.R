@@ -54,9 +54,10 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                  plotOutput("US.LaborMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Housing Market",
-                                                 h3("US Housing Market Indicators"),
-                                                 checkboxInput("UIHousingDashboardHistoryControl", "Show More History", value=FALSE),
-                                                 plotOutput("US.HousingMarket.Dashboard", height="1000px")
+                                                 htmlOutput("Housing.Dashboard")
+                                                 #                                                  h3("US Housing Market Indicators"),
+                                                 #                                                  checkboxInput("UIHousingDashboardHistoryControl", "Show More History", value=FALSE),
+                                                 #                                                  plotOutput("US.HousingMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Vehicle Sales",
                                                  h3("US Vehicles Sales and Auto Market Indicators"),

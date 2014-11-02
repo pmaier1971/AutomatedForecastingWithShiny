@@ -72,6 +72,7 @@ shinyServer(function(input, output, session) {
       # Data import
       cat("\n\n--------------------\nDownloading data online....")
       
+      
       Data.US <- c("US.GDP.Real"="GDPC1", "US.Survey.PMI.M"="NAPM", "US.Survey.Empire"="GACDINA066MNFRBNY", 
                    "US.IP"= "INDPRO", "US.Claims"="IC4WSA", "US.Payroll"="PAYEMS",
                    "US.Unemployment"="UNRATE", "US.Unemployment.U6" = "U6RATE",
@@ -100,6 +101,7 @@ shinyServer(function(input, output, session) {
                    "US.Activity.InitialClaims" = "ICSA",
                    "US.Activity.ContinuedClaims.4W.MA" = "CC4WSA",
                    "US.Activity.ContinuedClaims" = "CCSA",
+                   #"US.Activity.TruckTonnage"="M03032USM350SNBR",
                    "US.JOLTS.QuitsRate" = "JTSQUR",
                    "US.JOLTS.HireRate" = "JTSHIR",
                    "US.JOLTS.JobOpeningsRate" ="JTSJOR",
@@ -115,12 +117,12 @@ shinyServer(function(input, output, session) {
                    "US.SOV.30Y"="DGS30", 
                    "US.FSI.Cleveland"="CFSI",
                    "US.HouseholdDebt" = "HDTGPDUSQ163N",
-                   "US.Housing.NewPrivateHousingStarts"="HOUST",
+                   "US.Housing.NewPrivateHousingStarts"="HOUSTNSA",
                    "US.Housing.NewPrivateHousingPermits"="PERMIT",
-                   "US.Housing.NewPrivateHousingConstruction"="UNDCONTSA",
-                   "US.Housing.NewPrivateHousingCompleted"="COMPUTSA",
-                   "US.Housing.NewPrivate1UnitCompleted"="COMPU1USA",
-                   "US.Housing.NewPrivate2UnitCompleted"="COMPU24USA",
+                   "US.Housing.NewPrivateHousingConstruction"="UNDCONTNSA",
+                   "US.Housing.NewPrivateHousingCompleted"="COMPUTNSA",
+                   "US.Housing.NewPrivate1UnitCompleted"="COMPU1UNSA",
+                   "US.Housing.NewPrivate2UnitCompleted"="COMPU24UNSA",
                    "US.Housing.NewPrivate5UnitCompleted"="COMPU5MUNSA",
                    "US.Housing.30YMortgageRate"="MORTG",
                    "US.Housing.NewHomeSales" = "HSN1F",
@@ -690,14 +692,14 @@ output$US.InterestRates.Commentary <- renderText({
   return(Commentary)
 })
 
-# HTML <- GET(url="https://dl.dropboxusercontent.com/s/rb0cnyfiz2fgdaw/hello.html")
-# dropbox.html <-content(HTML, as="text")
-# 
+Housing.HTML <- GET(url="https://www.dropbox.com/s/ad85f97rk5eoj2v/Housing.html?dl=0")
+Housing.HTML <-content(Housing.HTML, as="text")
+output$Housing.Dashboard <- renderText({Housing.HTML})
+
+
 
 InternationalInflation.HTML <- GET(url="https://www.dropbox.com/s/xni9gh5j2czblcf/Inflation.html?dl=0")
 InternationalInflation.HTML <-content(InternationalInflation.HTML, as="text")
-
-
 output$International.InflationAnalysis.Dashboard <- renderText({InternationalInflation.HTML})
 
 output$International.Inflation.Dashboard <- renderPlot({
