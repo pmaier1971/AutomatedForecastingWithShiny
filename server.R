@@ -11,6 +11,7 @@ library(Quandl)
 library(shinyIncubator)
 library(httr)
 library(rDrop)
+library(tis)
 
 # File Setup####
 load("my_dropbox_credentials.rdata")
@@ -33,6 +34,15 @@ misc.growth.quarterlydata.to.yy <- function(x){
 misc.growth.monthlydata.to.yy <- function(x){
   x <- 100*log(x / lag(x, 12))
 }
+
+misc.NBER.Recessions <- function(){
+  NBER.Recessions <- as.Date(as.character(t(nberDates())), format="%Y%m%d")
+  Limits <- par('usr')
+  for (idx in seq(1, length(NBER.Recessions), 2) ) {
+    rect(NBER.Recessions[idx], Limits[3], NBER.Recessions[idx+1], Limits[4], col="#0000FF19", lty=0)
+  }
+}
+
 
 shinyServer(function(input, output, session) {
   
@@ -323,12 +333,18 @@ shinyServer(function(input, output, session) {
   output$Charts.Country.Analysis <-renderPlot({
     Country <- input$Country.Analysis.Control.Choice
     par(mfrow=c(2,3))
-    plot(get(paste(Country,".GDP.Real.qq", sep="")), main="Real GDP q/q")
-    if (exists(paste(Country,".IP", sep="")))           plot(get(paste(Country,".IP", sep="")), main="Industrial production")
-    if (exists(paste(Country,".Unemployment", sep=""))) plot(get(paste(Country,".Unemployment", sep="")), main="Unemployment")
-    if (exists(paste(Country,".CPI.Headline", sep=""))) plot(get(paste(Country,".CPI.Headline", sep="")), main="Headline CPI")
-    if (exists(paste("FX.",Country,".USD", sep="")))    plot(get(paste("FX.",Country,".USD", sep="")), main="Exchange rate against the USD")
-    if (exists(paste(Country,".SOV.10Y", sep="")))      plot(get(paste(Country,".SOV.10Y", sep="")), main="10Y Sovereign bond")    
+    plot(as.zoo(get(paste(Country,".GDP.Real.qq", sep=""))), main="Real GDP q/q", xlab="", ylab="")
+    if (Country=="US") misc.NBER.Recessions()
+    if (exists(paste(Country,".IP", sep="")))           plot(as.zoo(get(paste(Country,".IP", sep=""))), main="Industrial production", xlab="", ylab="")
+    if (Country=="US") misc.NBER.Recessions()
+    if (exists(paste(Country,".Unemployment", sep=""))) plot(as.zoo(get(paste(Country,".Unemployment", sep=""))), main="Unemployment", xlab="", ylab="")
+    if (Country=="US") misc.NBER.Recessions()
+    if (exists(paste(Country,".CPI.Headline", sep=""))) plot(as.zoo(get(paste(Country,".CPI.Headline", sep=""))), main="Headline CPI", xlab="", ylab="")
+    if (Country=="US") misc.NBER.Recessions()
+    if (exists(paste("FX.",Country,".USD", sep="")))    plot(as.zoo(get(paste("FX.",Country,".USD", sep=""))), main="Exchange rate against the USD", xlab="", ylab="")
+    if (Country=="US") misc.NBER.Recessions()
+    if (exists(paste(Country,".SOV.10Y", sep="")))      plot(as.zoo(get(paste(Country,".SOV.10Y", sep=""))), main="10Y Sovereign bond", xlab="", ylab="")    
+    if (Country=="US") misc.NBER.Recessions()
     par(mfrow=c(1,1))    
   })
   
@@ -669,13 +685,10 @@ shinyServer(function(input, output, session) {
     plot(na.omit(Data.Rates.Y[,Data.Rates.dim]), type="n", col=rainbow(Data.Rates.dim), 
          main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)", xlab="", ylab="",
          ylim=c(min(Data.Rates.Y), max(Data.Rates.Y)))
-
     for (idx in 1:Data.Rates.dim){
       lines(Data.Rates.Y[,idx], col=tail(rainbow(Data.Rates.dim)[idx],1))
     }
-    
-#     barplot(na.omit(Data.Rates.Y), col=rainbow(Data.Rates.dim), #cex.main=0.75,
-#             main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)")
+    grid(NA, NULL, lty=2, col="gray")
     legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
     par(mfrow = c(1,1))
   })
@@ -691,6 +704,10 @@ output$US.InterestRates.Commentary <- renderText({
   Commentary <- paste0(Commentary, "</ul> Below we plot US Treasury interest rates and spreads for differt time horizons.")
   return(Commentary)
 })
+
+VehicleSales.HTML <- GET(url="https://www.dropbox.com/s/lmyh1s68ntb73q2/VehicleSales.html?dl=0")
+VehicleSales.HTML <-content(VehicleSales.HTML, as="text")
+output$VehiclesSales.Dashboard <- renderText({VehicleSales.HTML})
 
 Housing.HTML <- GET(url="https://www.dropbox.com/s/ad85f97rk5eoj2v/Housing.html?dl=0")
 Housing.HTML <-content(Housing.HTML, as="text")

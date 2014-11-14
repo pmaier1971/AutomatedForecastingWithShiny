@@ -32,7 +32,7 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                           htmlOutput("Commentary.Country.Analysis")
                                         ),
                                         mainPanel(
-                                          HTML("<h3>Latest developments</h3>"),
+                                          HTML("<h3>Longer-Term View</h3>"),
                                           plotOutput("Charts.Country.Analysis")
                                         )
                                       )
@@ -60,9 +60,10 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                  #                                                  plotOutput("US.HousingMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Vehicle Sales",
-                                                 h3("US Vehicles Sales and Auto Market Indicators"),
-                                                 checkboxInput("UIAutoDashboardHistoryControl", "Show More History", value=FALSE),
-                                                 plotOutput("US.AutoMarket.Dashboard", height="1000px")
+                                                 htmlOutput("VehiclesSales.Dashboard")
+                                                 #                                                  h3("US Vehicles Sales and Auto Market Indicators"),
+                                                 #                                                  checkboxInput("UIAutoDashboardHistoryControl", "Show More History", value=FALSE),
+                                                 #                                                  plotOutput("US.AutoMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Treasury Interest Rates",
                                                  h3("Evolution of US Treasury Constant Maturity Rates  (in %)"),

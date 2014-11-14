@@ -24,3 +24,4 @@ The code can be found on <a href='https://github.com/pmaier1971/AutomatedForecas
 ### Disclaimer
 
 This page is not affiliated with any of the institutions I currently work for, or I have worked for in the past. All views expressed are my own. No forecast should be used as input for business or investment decisions. The stock market information displayed is to test the robustness of retrieving stock market data, not because I have any interest in or can recommend these particular stocks.
+
