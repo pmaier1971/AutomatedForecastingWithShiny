@@ -124,8 +124,8 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                                       includeMarkdown("Description.EnsembleForecasting.md")),
                                                      plotOutput("EnsembleForecast.Plot"),
                                                      
-                                                     checkboxInput("EnsembleForecastingUpdateChoice", "Changes Since Last Forecast", FALSE),
-                                                     conditionalPanel(condition = "input.EnsembleForecastingUpdateChoice",
+                                                     checkboxInput("EnsembleForecastingUpdateChoice", "Hide Tracking", FALSE),
+                                                     conditionalPanel(condition = "!input.EnsembleForecastingUpdateChoice",
                                                                       plotOutput("EnsembleForecast.Tracking"),
                                                                       verbatimTextOutput("Forecast.Tracking"))
                                                    )))

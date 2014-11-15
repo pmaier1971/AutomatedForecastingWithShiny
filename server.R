@@ -1078,11 +1078,27 @@ output$International.Inflation.Dashboard <- renderPlot({
   
   output$EnsembleForecast.Tracking <- renderPlot({
     cat("\n       Show forecast tracking chart")
-    if (input$ForecastPooling.Selection == "GDP") Chart.Data <- Table.ForecastTracking.GDP
-    if (input$ForecastPooling.Selection == "Nonfarm Payrolls")Chart.Data <- Table.ForecastTracking.NFP
+    if (input$ForecastPooling.Selection == "GDP")              Chart.Data <- Table.ForecastTracking.GDP
+    if (input$ForecastPooling.Selection == "Nonfarm Payrolls") Chart.Data <- Table.ForecastTracking.NFP
+    ChartTitle <- paste0("Forecast Tracking for ", input$ForecastPooling.Selection)    
     Chart.Data <- subset(Chart.Data, ForecastPeriod == max(ForecastPeriod))
-    suppressWarnings(Chart.Data <- zoo(Chart.Data[,6:12], Chart.Data[,1]))
-    return(misc.plot.EnsembleForecasting(Chart.Data, ChartTitle=paste0("Forecast Tracking for ", input$ForecastPooling.Selection)))
+    Chart.Data <- Chart.Data[, -(3:4)]    
+    
+    plot(Chart.Data[,4], type="l", ylim=c(min(Chart.Data[,-(1:3)], na.rm=TRUE), max(Chart.Data[,-(1:3)], na.rm=TRUE)),
+         xaxt="n", xlab="", ylab="", main=ChartTitle)
+    
+    segments(index(Chart.Data[,1]), Chart.Data[,5], index(Chart.Data[,1]), Chart.Data[,10], lwd=10, col="lightskyblue")
+    segments(index(Chart.Data[,1]), Chart.Data[,6], index(Chart.Data[,1]), Chart.Data[,9], lwd=10, col="dodgerblue")    
+    segments(index(Chart.Data[,1]), Chart.Data[,7], index(Chart.Data[,1]), Chart.Data[,8], lwd=10, col="mediumblue")    
+    lines(Chart.Data[,4], col="red", lwd=3)
+    
+    points(index(Chart.Data[,1]), Chart.Data[,4], pch=19, col="black")
+    axis(1, at=index(Chart.Data[,1]), labels = Chart.Data[,1], las=3, cex.axis=.75)
+    text.seq <- rep(c("TRUE", "FALSE"), length(index(Chart.Data)/2))
+    
+    text(x=index(Chart.Data[,5]), 
+         y=(par('usr')[4]+par('usr')[3])/2 + rep(c(1,-1),length(index(Chart.Data))/2) * (par('usr')[4]-par('usr')[3])/2.5, 
+         labels=Chart.Data[,2], cex=0.75, srt=-15)
   })
   
   # STOCK MARKET####
