@@ -1047,8 +1047,13 @@ output$International.Inflation.Dashboard <- renderPlot({
   })
   
   output$Forecast.Tracking <- renderPrint({
-    if (input$ForecastPooling.Selection == "GDP") Table.Change.Print <- tail(Table.ForecastTracking.GDP,5)[,c(1:3,6)]
-    if (input$ForecastPooling.Selection == "Nonfarm Payrolls") Table.Change.Print <- tail(Table.ForecastTracking.NFP,5)[,c(1:3,6)]
+    if (input$ForecastPooling.Selection == "GDP")              Table.Change.Print <- Table.ForecastTracking.GDP
+    if (input$ForecastPooling.Selection == "Nonfarm Payrolls") Table.Change.Print <- Table.ForecastTracking.NFP
+    
+    Table.Change.Print <- subset(Table.Change.Print, ForecastPeriod == max(ForecastPeriod))
+    
+    Table.Change.Print <- Table.Change.Print[,c(1:3,6)]
+    
     Table.Change.Print[,4]       <-round(Table.Change.Print[,4],2)
     rownames(Table.Change.Print) <- NULL
     colnames(Table.Change.Print) <- c("Date", "Indicator", "Value", "Forecast")

@@ -12,4 +12,4 @@ In implementing this approach, we are somewhat limited by the fact that the proc
 
 + For each round of forecasts, we randomly select 4 variables from the data set as predictors, and estimate an AR(1) model. Note: we also experimented with R's auto.arima function (of the forecast package) to optimally select lag terms, but we found that (i) this is much slower, and (ii) the forecast accuracy does not deteriorate substantially by simply imposing an AR(1) model.
 
-This process is repeated 1000 times to generate the mean forecast, as well as various percentiles of the distribution. (Again, to fully reap the benefits of this technique, ideally the data set should be larger, and one would run many more repetitions.)
+This process is repeated 2500 times to generate the mean forecast, as well as various percentiles of the distribution. (Again, to fully reap the benefits of this technique, ideally the data set should be larger, and one would run many more repetitions.) We store every run, as well as changes to the input data. This gives us a tracking forecast.

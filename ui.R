@@ -113,11 +113,11 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                    sidebarPanel(
                                                      selectInput("ForecastPooling.Selection",
                                                                  "Select A Variable To Forecast",
-                                                                 c("Nonfarm Payrolls", "GDP") ),
+                                                                 c("GDP", "Nonfarm Payrolls") ),
                                                      htmlOutput("EnsembleForecast.Commentary")
                                                    ),
                                                    mainPanel(
-                                                     HTML("<h3>Ensemble Forecasting For Nonfarm Payrolls and GDP</h3>"),
+                                                     HTML("<h3>Ensemble Forecasting For GDP and Nonfarm Payrolls</h3>"),
                                                      checkboxInput("EnsembleForecastingDescChoice", "Show Model Description", FALSE),
                                                      HTML("<p>Below the in-sample fit; the box on the left provides details on the forecast for the next data release. The checkbox underneath the chart toggles the tracking information, i.e. how the forecast changed in response to new data."),
                                                      conditionalPanel(condition = "input.EnsembleForecastingDescChoice",
@@ -126,6 +126,8 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                      
                                                      checkboxInput("EnsembleForecastingUpdateChoice", "Hide Tracking", FALSE),
                                                      conditionalPanel(condition = "!input.EnsembleForecastingUpdateChoice",
+                                                                      HTML("<p>The chart below shows how the forecast has changed in light of new data releases. The description on each bar
+indicates the data; the table shows the additional details of the data release. Both chart and table are updated automatically as new information becomes available.<p>"),
                                                                       plotOutput("EnsembleForecast.Tracking"),
                                                                       verbatimTextOutput("Forecast.Tracking"))
                                                    )))
