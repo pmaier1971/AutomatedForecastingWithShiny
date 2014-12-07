@@ -282,7 +282,7 @@ shinyServer(function(input, output, session) {
     Commentary <- paste0(Commentary, "<b>Europe:</b><ul><li> In Frankfurt the DAX closed at ", round(last(GDAXI)[,4],2), ", ", misc.UpDown(last(diff(GDAXI)[,4])), " from the last close. ")
     Commentary <- paste0(Commentary, "The London FTSE closed at ", round(last(FTSE)[,4],2), ", ", misc.UpDown(last(diff(FTSE)[,4])), " points. ")
     Commentary <- paste0(Commentary, "<li>The euro currently stands at ", 
-                         round(last(DEXUSEU),3), ", ", misc.UpDown(last(diff(DEXUSEU))), 
+                         round(last(DEXUSEU),3), ", ", misc.UpDown(last(diff(na.omit(DEXUSEU)))), 
                          " from the last close; ")
     Commentary <- paste0(Commentary, "the 10-Year Treasury Yield is at ", 
                          round(last(IRLTLT01EZM156N),3), " (", misc.UpDown(last(diff(IRLTLT01EZM156N))), 
