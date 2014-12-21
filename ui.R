@@ -38,6 +38,10 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                       )
                              ),
                              navbarMenu("Detailed Analysis", 
+                                        tabPanel("US Monetary Policy",
+                                                 h3("Latest FOMC Monetary Policy Statement"),
+                                                 htmlOutput("FOMC.Current")
+                                        ),
                                         tabPanel("US Activity Surveys",
                                                  h3("High-Frequency Surveys of US Economic Activity"),
                                                  HTML("High-frequency indicators have some interesting properties. <ul><li>They provide an early snapshot of economic activity in different sectors of the US economy. 
@@ -72,20 +76,6 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                         ),
                                         tabPanel("International Inflation Comparison",
                                                  htmlOutput("International.InflationAnalysis.Dashboard")
-                                                 #                                         ),
-                                                 #                                         tabPanel("International Inflation Comparison",
-                                                 #                                                  sidebarLayout(
-                                                 #                                                    sidebarPanel(
-                                                 #                                                      selectInput("InflationComparisonChoice", "Select A Period",
-                                                 #                                                                  c("Over The Past 5 Years" = 5, 
-                                                 #                                                                    "Over The Past 2 Years" = 2, 
-                                                 #                                                                    "Over The Past Year" = 1))
-                                                 #                                                    ),
-                                                 #                                                    mainPanel(
-                                                 #                                                      h3("International Inflation Comparison"),
-                                                 #                                                      HTML("Which country had has the highest headline inflation rate?<p>"),
-                                                 #                                                      plotOutput("International.Inflation.Dashboard")
-                                                 #                                                    ))
                                         )
                              ),
                              navbarMenu("Forecasting",

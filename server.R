@@ -1,4 +1,5 @@
 rm(list=ls())
+library(rvest)
 library(shiny)
 library(reshape)
 library(googleVis)
@@ -252,11 +253,12 @@ shinyServer(function(input, output, session) {
     }
     
     # Get the market data
-    cat("\n   --> Downloading stock market data")
+    cat("\n   --> Downloading stock market data.... ")
     for (i in 1:length(ListOfCodes)){
       getSymbols(ListOfCodes[i], src='yahoo')
     }  
-    
+    cat("done.")
+
   } else {
     cat("\nNo online connection.")
     load("InputData.RData")
@@ -1138,5 +1140,9 @@ output$International.Inflation.Dashboard <- renderPlot({
     rownames(Stock.Info) <- NULL
     return(Stock.Info)
   })
-  
+
+
+
+output$FOMC.Current <- renderText({ return(FOMC.Text ) })
+
 })
