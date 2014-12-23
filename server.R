@@ -418,8 +418,129 @@ shinyServer(function(input, output, session) {
     return(Commentary)
   })
   
-  # Panel Detailed Analysis####
+  # Monetary Policy ####
   
+output$FOMC.Current <- renderText({ return(FOMC.Text ) })
+output$Charts.FOMC <- renderPlot( {
+  par(mfrow=c(2,1))
+  Chart.Title <- paste0( FRED.Codes[grep("US.Rates.1M.Treasury", FRED.Codes$InternalCode), "Description"], 
+                         "\n vs. ", FRED.Codes[grep("US.Rates.FedFunds", FRED.Codes$InternalCode), "Description"])
+  plot(as.zoo(na.omit(US.Rates.1M.Treasury[index(US.Rates.1M.Treasury) > Sys.Date() - years(1)])), cex.main = 0.8,
+       type = "l", col = "red", lwd=2, ylab="", main= Chart.Title)
+  lines(as.zoo(na.omit(US.Rates.FedFunds[index(US.Rates.FedFunds) > Sys.Date() - years(1)])), col="blue", lty=2, lwd=2)
+  legend("topright", c("1M Treasury", "FF Effective"), fill=c("red", "blue"))
+  
+  Data.1M <-merge(US.Rates.1MFinancial, US.Rates.1MNonFinancial)
+  Data.1M <- as.zoo(na.omit(Data.1M[index(Data.1M) > Sys.Date() - months(3)]))
+  Data.1M$Diff <- Data.1M[,1] - Data.1M[,2]  
+  Chart.Title <- paste0(FRED.Codes[grep("US.Rates.1MFinancial", FRED.Codes$InternalCode), "Description"], "\n vs. ",
+                          FRED.Codes[grep("US.Rates.1MNonFinancial", FRED.Codes$InternalCode), "Description"])
+  Data.1M.plot <- barplot(Data.1M$Diff, col="lightblue", ylim = c( 1.25*min(Data.1M), 1.2*max(Data.1M) ), 
+                          cex.main = 0.8, main = Chart.Title, border="NA" )
+  lines(x = Data.1M.plot, y = Data.1M[,1], col = "blue", lwd=2)
+  lines(x = Data.1M.plot, y = Data.1M[,2], col = "red", lwd=2)
+  legend("bottomleft", c("Financial", "Non-Financial", "Difference"), fill=c("blue", "red", "lightblue"))  
+  
+})
+
+US.InterestRates.Dashboard.Data <- function(){
+  Data.Dashboard <- Reduce(function(...) merge(...), list( US.SOV.1Y, 
+                                                           US.SOV.2Y, 
+                                                           US.SOV.3Y, 
+                                                           US.SOV.5Y, 
+                                                           US.SOV.7Y, 
+                                                           US.SOV.10Y ))
+  return(Data.Dashboard)
+}
+
+output$US.InterestRates.Dashboard <- renderPlot({
+  Data.Rates     <- US.InterestRates.Dashboard.Data()
+  week           <- function(x)format(x, '%Y.W%W')
+  month          <- function(x)format(x, '%Y.M%m')
+  year           <- function(x)format(x, '%Y')
+  Data.Rates.dim <- length(colnames(Data.Rates))
+  
+  Data.Rates.Y <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(15),])
+  
+  Data.Rates[,2:Data.Rates.dim] <- Data.Rates[,2:Data.Rates.dim] - Data.Rates[,1:(Data.Rates.dim-1)]
+  
+  Data.Rates.M <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(5),])
+  Data.Rates.W <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(1),])
+  Data.Rates.D <- na.omit(as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-months(6),]))
+  Data.Rates.W <- aggregate(Data.Rates.W, by=week, FUN=mean, na.rm=TRUE)
+  Data.Rates.M <- aggregate(Data.Rates.M, by=month, FUN=mean, na.rm=TRUE)
+  Data.Rates.Y <- aggregate(Data.Rates.Y, by=year, FUN=mean, na.rm=TRUE)
+  
+  Data.Rates.Names<-c("1Y", "2Y", "3Y", "5Y", "7Y", "10Y") # , "20Y", "30Y")
+  
+  par(mfrow = c(2,2))
+  barplot(Data.Rates.D, col=rainbow(Data.Rates.dim), #cex.main=0.75,
+          main="Treasury Rates (Constant Maturity, Daily Yields in % For The Last 6 Months)")
+  legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+  
+  barplot(na.omit(Data.Rates.W), col=rainbow(Data.Rates.dim), #cex.main=0.75,
+          main="Treasury Rates (Constant Maturity, Weekly Average Yields in % For The Last Year)")
+  legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+  
+  barplot(Data.Rates.M, col=rainbow(Data.Rates.dim), #cex.main=0.75,
+          main="Treasury Rates (Monthly Average Yield in % For The Last 5 Years)")
+  legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+  
+  plot(na.omit(Data.Rates.Y[,Data.Rates.dim]), type="n", col=rainbow(Data.Rates.dim), 
+       main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)", xlab="", ylab="",
+       ylim=c(min(Data.Rates.Y), max(Data.Rates.Y)))
+  for (idx in 1:Data.Rates.dim){
+    lines(Data.Rates.Y[,idx], col=tail(rainbow(Data.Rates.dim)[idx],1))
+  }
+  grid(NA, NULL, lty=2, col="gray")
+  legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
+  par(mfrow = c(1,1))
+})
+
+output$US.InterestRates.Commentary <- renderText({
+  Commentary <- "US Treasuries are often considered the 'riskless asset' for the US economy, and therefore play a vital role as benchmark interest rates for other asset classes. "
+  Commentary <- paste0(Commentary, "Treasuries are very liquid and heavily traded in secondary markets. A compression in the spread between shorter and longer maturities - i.e. a flattening of the yield curve - indicates that investors gain less (additional) compensation for holding longer-term securities. ")
+  Commentary <- paste0(Commentary, "<p>Below we plot US Treasury Rates at different maturities. ")
+  Commentary <- paste0(Commentary, "On ", format(index(tail(TNX,1)), "%B %d, %Y"), " the following yields were observed at closing: ")
+  Commentary <- paste0(Commentary, "<ul><li> On the short end of the curve, the 1Y closed at ", tail(100*US.SOV.1Y,1)," bps, ", misc.UpDown(last(diff(na.omit(100*US.SOV.5Y)))), " from the last close.")
+  Commentary <- paste0(Commentary, "<li> 5Y and 7Y Treasuries closed at ", tail(US.SOV.5Y,1),"% and ", tail(US.SOV.7Y,1),"%.")
+  Commentary <- paste0(Commentary, "<li> Lastly, on the long end of the curve, the 10Y US Treasury closed at ", tail(100*TNX[,4],1)," bps; ", misc.UpDown(last(diff(100*TNX[,4]))), ".")
+  Commentary <- paste0(Commentary, "</ul> Below we plot US Treasury interest rates and spreads for differt time horizons.")
+  return(Commentary)
+})
+
+
+InternationalInflation.HTML <- GET(url="https://www.dropbox.com/s/xni9gh5j2czblcf/Inflation.html?dl=0")
+InternationalInflation.HTML <-content(InternationalInflation.HTML, as="text")
+output$International.InflationAnalysis.Dashboard <- renderText({InternationalInflation.HTML})
+
+output$International.Inflation.Dashboard <- renderPlot({
+  
+  CoreInflation.Comparison.Data <- CoreInflation.Comparison.Data[index(CoreInflation.Comparison.Data)>=Sys.Date()-years(input$InflationComparisonChoice)]
+  # CoreInflation.Comparison.Data <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+  # CoreInflation.Comparison.Data <- cbind(CoreInflation.Comparison.Data, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(CoreInflation.Comparison.Data)-1))))
+  
+  Inflation.Comparison.Data.Chart <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
+  Inflation.Comparison.Data.Chart <- cbind(Inflation.Comparison.Data.Chart, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data.Chart)-1))))
+  
+  plot(as.zoo(Inflation.Comparison.Data.Chart[,1]), main = "Cumulative Change in the Price Level (Headline)", type = "n",
+       xaxt="n", xlab="", ylab="", ylim=c(min(Inflation.Comparison.Data.Chart, na.rm=TRUE), max(Inflation.Comparison.Data.Chart, na.rm=TRUE)))
+  axis(1, at=row(CoreInflation.Comparison.Data[,1]), label = index(CoreInflation.Comparison.Data),
+       col.axis="black", cex.axis=0.7)
+  line.color <- rainbow(ncol(Inflation.Comparison.Data.Chart))
+  for (idx in 1:ncol(Inflation.Comparison.Data.Chart)){
+    if (idx == ncol(Inflation.Comparison.Data.Chart)) {
+      lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2, lty=2)
+    } else {
+      lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2)
+    }
+  }
+  legend("topleft", legend=c("United States", "Euro Area", "United Kingdom", "Japan", "2% Trend"), fill=rainbow(idx), cex=0.75) 
+  
+})
+
+# Economic Activity ####
+
   US.ActivityMeasures.Data <- function(){
     Data.Dashboard <- Reduce(function(...) merge(...), list(US.Activity.ChicagoFed, 
                                                             US.Activity.PhillyFed.Leading,
@@ -641,72 +762,7 @@ shinyServer(function(input, output, session) {
     par(op)
   })
   
-  US.InterestRates.Dashboard.Data <- function(){
-    Data.Dashboard <- Reduce(function(...) merge(...), list( US.SOV.1Y, 
-                                                             US.SOV.2Y, 
-                                                             US.SOV.3Y, 
-                                                             US.SOV.5Y, 
-                                                             US.SOV.7Y, 
-                                                             US.SOV.10Y ))
-    return(Data.Dashboard)
-  }
   
-  output$US.InterestRates.Dashboard <- renderPlot({
-    Data.Rates     <- US.InterestRates.Dashboard.Data()
-    week           <- function(x)format(x, '%Y.W%W')
-    month          <- function(x)format(x, '%Y.M%m')
-    year           <- function(x)format(x, '%Y')
-    Data.Rates.dim <- length(colnames(Data.Rates))
-    
-    Data.Rates.Y <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(15),])
-    
-    Data.Rates[,2:Data.Rates.dim] <- Data.Rates[,2:Data.Rates.dim] - Data.Rates[,1:(Data.Rates.dim-1)]
-    
-    Data.Rates.M <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(5),])
-    Data.Rates.W <- as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-years(1),])
-    Data.Rates.D <- na.omit(as.zoo(Data.Rates[index(Data.Rates)>=Sys.Date()-months(6),]))
-    Data.Rates.W <- aggregate(Data.Rates.W, by=week, FUN=mean, na.rm=TRUE)
-    Data.Rates.M <- aggregate(Data.Rates.M, by=month, FUN=mean, na.rm=TRUE)
-    Data.Rates.Y <- aggregate(Data.Rates.Y, by=year, FUN=mean, na.rm=TRUE)
-    
-    Data.Rates.Names<-c("1Y", "2Y", "3Y", "5Y", "7Y", "10Y") # , "20Y", "30Y")
-    
-    par(mfrow = c(2,2))
-    barplot(Data.Rates.D, col=rainbow(Data.Rates.dim), #cex.main=0.75,
-            main="Treasury Rates (Constant Maturity, Daily Yields in % For The Last 6 Months)")
-    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
-    
-    barplot(na.omit(Data.Rates.W), col=rainbow(Data.Rates.dim), #cex.main=0.75,
-            main="Treasury Rates (Constant Maturity, Weekly Average Yields in % For The Last Year)")
-    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
-    
-    barplot(Data.Rates.M, col=rainbow(Data.Rates.dim), #cex.main=0.75,
-            main="Treasury Rates (Monthly Average Yield in % For The Last 5 Years)")
-    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
-    
-    plot(na.omit(Data.Rates.Y[,Data.Rates.dim]), type="n", col=rainbow(Data.Rates.dim), 
-         main="Treasury Rates (Yearly Average Yields in % For The Last 15 Years)", xlab="", ylab="",
-         ylim=c(min(Data.Rates.Y), max(Data.Rates.Y)))
-    for (idx in 1:Data.Rates.dim){
-      lines(Data.Rates.Y[,idx], col=tail(rainbow(Data.Rates.dim)[idx],1))
-    }
-    grid(NA, NULL, lty=2, col="gray")
-    legend("bottomleft", Data.Rates.Names, fill=rainbow(Data.Rates.dim), cex=0.75)
-    par(mfrow = c(1,1))
-  })
-  
-output$US.InterestRates.Commentary <- renderText({
-  Commentary <- "US Treasuries are often considered the 'riskless asset' for the US economy, and therefore play a vital role as benchmark interest rates for other asset classes. "
-  Commentary <- paste0(Commentary, "Treasuries are very liquid and heavily traded in secondary markets. A compression in the spread between shorter and longer maturities - i.e. a flattening of the yield curve - indicates that investors gain less (additional) compensation for holding longer-term securities. ")
-  Commentary <- paste0(Commentary, "<p>Below we plot US Treasury Rates at different maturities. ")
-  Commentary <- paste0(Commentary, "On ", format(index(tail(TNX,1)), "%B %d, %Y"), " the following yields were observed at closing: ")
-  Commentary <- paste0(Commentary, "<ul><li> On the short end of the curve, the 1Y closed at ", tail(100*US.SOV.1Y,1)," bps, ", misc.UpDown(last(diff(na.omit(100*US.SOV.5Y)))), " from the last close.")
-  Commentary <- paste0(Commentary, "<li> 5Y and 7Y Treasuries closed at ", tail(US.SOV.5Y,1),"% and ", tail(US.SOV.7Y,1),"%.")
-  Commentary <- paste0(Commentary, "<li> Lastly, on the long end of the curve, the 10Y US Treasury closed at ", tail(100*TNX[,4],1)," bps; ", misc.UpDown(last(diff(100*TNX[,4]))), ".")
-  Commentary <- paste0(Commentary, "</ul> Below we plot US Treasury interest rates and spreads for differt time horizons.")
-  return(Commentary)
-})
-
 VehicleSales.HTML <- GET(url="https://www.dropbox.com/s/lmyh1s68ntb73q2/VehicleSales.html?dl=0")
 VehicleSales.HTML <-content(VehicleSales.HTML, as="text")
 output$VehiclesSales.Dashboard <- renderText({VehicleSales.HTML})
@@ -717,34 +773,6 @@ output$Housing.Dashboard <- renderText({Housing.HTML})
 
 
 
-InternationalInflation.HTML <- GET(url="https://www.dropbox.com/s/xni9gh5j2czblcf/Inflation.html?dl=0")
-InternationalInflation.HTML <-content(InternationalInflation.HTML, as="text")
-output$International.InflationAnalysis.Dashboard <- renderText({InternationalInflation.HTML})
-
-output$International.Inflation.Dashboard <- renderPlot({
-  
-  CoreInflation.Comparison.Data <- CoreInflation.Comparison.Data[index(CoreInflation.Comparison.Data)>=Sys.Date()-years(input$InflationComparisonChoice)]
- # CoreInflation.Comparison.Data <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
- # CoreInflation.Comparison.Data <- cbind(CoreInflation.Comparison.Data, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(CoreInflation.Comparison.Data)-1))))
- 
- Inflation.Comparison.Data.Chart <- apply(CoreInflation.Comparison.Data, 2, function(X) 100*(X/X[1]))
- Inflation.Comparison.Data.Chart <- cbind(Inflation.Comparison.Data.Chart, c(100, 100 * cumprod(rep(1.02^(1/12), nrow(Inflation.Comparison.Data.Chart)-1))))
- 
- plot(as.zoo(Inflation.Comparison.Data.Chart[,1]), main = "Cumulative Change in the Price Level (Headline)", type = "n",
-      xaxt="n", xlab="", ylab="", ylim=c(min(Inflation.Comparison.Data.Chart, na.rm=TRUE), max(Inflation.Comparison.Data.Chart, na.rm=TRUE)))
- axis(1, at=row(CoreInflation.Comparison.Data[,1]), label = index(CoreInflation.Comparison.Data),
-      col.axis="black", cex.axis=0.7)
- line.color <- rainbow(ncol(Inflation.Comparison.Data.Chart))
- for (idx in 1:ncol(Inflation.Comparison.Data.Chart)){
-   if (idx == ncol(Inflation.Comparison.Data.Chart)) {
-     lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2, lty=2)
-   } else {
-     lines(as.zoo(Inflation.Comparison.Data.Chart[,idx]), col = line.color[idx], lwd=2)
-   }
- }
- legend("topleft", legend=c("United States", "Euro Area", "United Kingdom", "Japan", "2% Trend"), fill=rainbow(idx), cex=0.75) 
- 
-})
 
   # Panel Macroeconomic Forecasting####
   
@@ -1140,9 +1168,5 @@ output$International.Inflation.Dashboard <- renderPlot({
     rownames(Stock.Info) <- NULL
     return(Stock.Info)
   })
-
-
-
-output$FOMC.Current <- renderText({ return(FOMC.Text ) })
 
 })

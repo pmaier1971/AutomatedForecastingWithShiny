@@ -22,26 +22,43 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                           plotOutput("Overview.Charts"),
                                           htmlOutput("UI.Date")
                                           ))),
-                             tabPanel("What's New?",
-                                      HTML(TwitterString)
-                             ),
-                             tabPanel("Country View",
-                                      sidebarLayout(
-                                        sidebarPanel(
-                                          uiOutput("UI.Country.Analysis"),
-                                          htmlOutput("Commentary.Country.Analysis")
+                             navbarMenu("What's New?",
+                                        tabPanel("Latest On Twitter",
+                                                 HTML(TwitterString)
                                         ),
-                                        mainPanel(
-                                          HTML("<h3>Longer-Term View</h3>"),
-                                          plotOutput("Charts.Country.Analysis")
+                                        tabPanel("Data Overview By Country",
+                                                 sidebarLayout(
+                                                   sidebarPanel(
+                                                     uiOutput("UI.Country.Analysis"),
+                                                     htmlOutput("Commentary.Country.Analysis")
+                                                   ),
+                                                   mainPanel(
+                                                     HTML("<h3>Longer-Term View</h3>"),
+                                                     plotOutput("Charts.Country.Analysis")
+                                                   )
+                                                 )
                                         )
-                                      )
                              ),
-                             navbarMenu("Detailed Analysis", 
+                             navbarMenu("Monetary Policy",
                                         tabPanel("US Monetary Policy",
-                                                 h3("Latest FOMC Monetary Policy Statement"),
-                                                 htmlOutput("FOMC.Current")
+                                                 sidebarLayout(
+                                                   sidebarPanel(
+                                                     plotOutput("Charts.FOMC", height = "750px")
+                                                   ),
+                                                   mainPanel(
+                                                     h3("Latest FOMC Monetary Policy Statement"),
+                                                     htmlOutput("FOMC.Current")
+                                                   ))),
+                                        tabPanel("US Treasury Interest Rates",
+                                                 h3("Evolution of US Treasury Constant Maturity Rates  (in %)"),
+                                                 htmlOutput("US.InterestRates.Commentary"),
+                                                 plotOutput("US.InterestRates.Dashboard", height="1000px")
                                         ),
+                                        tabPanel("International Inflation Comparison",
+                                                 htmlOutput("International.InflationAnalysis.Dashboard")
+                                        )
+                             ),
+                             navbarMenu("Economic Activity", 
                                         tabPanel("US Activity Surveys",
                                                  h3("High-Frequency Surveys of US Economic Activity"),
                                                  HTML("High-frequency indicators have some interesting properties. <ul><li>They provide an early snapshot of economic activity in different sectors of the US economy. 
@@ -68,17 +85,9 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                  #                                                  h3("US Vehicles Sales and Auto Market Indicators"),
                                                  #                                                  checkboxInput("UIAutoDashboardHistoryControl", "Show More History", value=FALSE),
                                                  #                                                  plotOutput("US.AutoMarket.Dashboard", height="1000px")
-                                        ),
-                                        tabPanel("US Treasury Interest Rates",
-                                                 h3("Evolution of US Treasury Constant Maturity Rates  (in %)"),
-                                                 htmlOutput("US.InterestRates.Commentary"),
-                                                 plotOutput("US.InterestRates.Dashboard", height="1000px")
-                                        ),
-                                        tabPanel("International Inflation Comparison",
-                                                 htmlOutput("International.InflationAnalysis.Dashboard")
                                         )
                              ),
-                             navbarMenu("Forecasting",
+                             navbarMenu("Economic Forecasting",
                                         tabPanel("Time Series Forecasting",
                                                  sidebarLayout(
                                                    sidebarPanel(
