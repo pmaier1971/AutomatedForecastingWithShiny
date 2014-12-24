@@ -43,6 +43,8 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                         tabPanel("US Monetary Policy",
                                                  sidebarLayout(
                                                    sidebarPanel(
+                                                     HTML("Word Cloud Of The Last FOMC Statement"),
+                                                     imageOutput("FOMC.WordCloud"),
                                                      plotOutput("Charts.FOMC", height = "750px")
                                                    ),
                                                    mainPanel(

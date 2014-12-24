@@ -72,10 +72,6 @@ shinyServer(function(input, output, session) {
     data.priorFC.GDP  <- (GET(url=file.PriorGDPForecast))
     data.priorFC.NFP  <- (GET(url=file.PriorNFPForecast))
     load(rawConnection(data.input$content))
-#     load(rawConnection(forecast.tracking$content))
-#     load(rawConnection(data.tracking$content))
-#     load(rawConnection(data.priorFC.GDP$content))
-#     load(rawConnection(data.priorFC.NFP$content))
     Table.DataTracking.Previous <- Table.DataTracking.Update # Save previous table
     
     # Is the data up-to-date?
@@ -177,7 +173,7 @@ shinyServer(function(input, output, session) {
                                "JP.CPI.Headline", "JP.CPI.Core")
       
       withProgress(session, min = 1, max = max.DataDownload+10, {
-        setProgress(message = "Downloading Data")
+        setProgress(message = "Downloading Economic Data")
         Progress <- 1
         setProgress(value = Progress)
         Progress <- 5
@@ -421,6 +417,8 @@ shinyServer(function(input, output, session) {
   # Monetary Policy ####
   
 output$FOMC.Current <- renderText({ return(FOMC.Text ) })
+output$FOMC.WordCloud <- renderImage( { list(src="US.FOMC.Text.png") })
+  
 output$Charts.FOMC <- renderPlot( {
   par(mfrow=c(2,1))
   Chart.Title <- paste0( FRED.Codes[grep("US.Rates.1M.Treasury", FRED.Codes$InternalCode), "Description"], 
@@ -431,7 +429,7 @@ output$Charts.FOMC <- renderPlot( {
   legend("topright", c("1M Treasury", "FF Effective"), fill=c("red", "blue"))
   
   Data.1M <-merge(US.Rates.1MFinancial, US.Rates.1MNonFinancial)
-  Data.1M <- as.zoo(na.omit(Data.1M[index(Data.1M) > Sys.Date() - months(3)]))
+  Data.1M <- as.zoo(na.omit(Data.1M[index(Data.1M) > Sys.Date() - years(1)]))
   Data.1M$Diff <- Data.1M[,1] - Data.1M[,2]  
   Chart.Title <- paste0(FRED.Codes[grep("US.Rates.1MFinancial", FRED.Codes$InternalCode), "Description"], "\n vs. ",
                           FRED.Codes[grep("US.Rates.1MNonFinancial", FRED.Codes$InternalCode), "Description"])
@@ -439,8 +437,8 @@ output$Charts.FOMC <- renderPlot( {
                           cex.main = 0.8, main = Chart.Title, border="NA" )
   lines(x = Data.1M.plot, y = Data.1M[,1], col = "blue", lwd=2)
   lines(x = Data.1M.plot, y = Data.1M[,2], col = "red", lwd=2)
-  legend("bottomleft", c("Financial", "Non-Financial", "Difference"), fill=c("blue", "red", "lightblue"))  
-  
+  legend("bottomleft", c("Financial", "Non-Financial", "Difference"), fill=c("blue", "red", "lightblue"), 
+                                                                             cex=0.75)
 })
 
 US.InterestRates.Dashboard.Data <- function(){
@@ -509,9 +507,8 @@ output$US.InterestRates.Commentary <- renderText({
   return(Commentary)
 })
 
-
 InternationalInflation.HTML <- GET(url="https://www.dropbox.com/s/xni9gh5j2czblcf/Inflation.html?dl=0")
-InternationalInflation.HTML <-content(InternationalInflation.HTML, as="text")
+InternationalInflation.HTML <- content(InternationalInflation.HTML, as="text")
 output$International.InflationAnalysis.Dashboard <- renderText({InternationalInflation.HTML})
 
 output$International.Inflation.Dashboard <- renderPlot({
