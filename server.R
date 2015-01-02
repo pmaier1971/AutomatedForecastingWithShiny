@@ -417,7 +417,7 @@ shinyServer(function(input, output, session) {
   # Monetary Policy ####
   
 output$FOMC.Current <- renderText({ return(FOMC.Text ) })
-output$FOMC.WordCloud <- renderImage( { list(src="US.FOMC.Text.png") })
+output$FOMC.WordCloud <- renderImage( { list(src="US.FOMC.Text.png") }, deleteFile = FALSE)
   
 output$Charts.FOMC <- renderPlot( {
   par(mfrow=c(2,1))
@@ -768,7 +768,13 @@ Housing.HTML <- GET(url="https://www.dropbox.com/s/ad85f97rk5eoj2v/Housing.html?
 Housing.HTML <-content(Housing.HTML, as="text")
 output$Housing.Dashboard <- renderText({Housing.HTML})
 
+Banking.HTML <- GET(url="https://www.dropbox.com/s/8w9sjhuh2tym3c9/USBanking.html?dl=0")
+Banking.HTML <-content(Banking.HTML, as="text")
+output$Banking.Dashboard <- renderText({Banking.HTML})
 
+US.GDP.HTML <- GET(url="https://www.dropbox.com/s/fonoocj0zorr3sj/US_GDP_LT.html?dl=0")
+US.GDP.HTML  <-content(US.GDP.HTML, as="text")
+output$US.GDP.LongTerm <- renderText({US.GDP.HTML})
 
 
   # Panel Macroeconomic Forecasting####

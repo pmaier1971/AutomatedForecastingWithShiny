@@ -43,7 +43,7 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                         tabPanel("US Monetary Policy",
                                                  sidebarLayout(
                                                    sidebarPanel(
-                                                     HTML("Word Cloud Of The Last FOMC Statement"),
+                                                     HTML("<b>FOMC Statement: Word Cloud</b>"),
                                                      imageOutput("FOMC.WordCloud"),
                                                      plotOutput("Charts.FOMC", height = "750px")
                                                    ),
@@ -70,11 +70,17 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                  htmlOutput("US.ActivityMeasures.Dashboard")
                                                  #plotOutput("US.ActivityMeasures.Change")
                                         ),
+                                        tabPanel("US GDP: Longer-Term View",
+                                                 htmlOutput("US.GDP.LongTerm")
+                                        ),
                                         tabPanel("US Labor Market",
                                                  h3("US Labor Market Indicators: Current Values, Relative to the Worst Point This Cycle"),
                                                  h5("The large charts show the longer-term evolution since 2000; the small charts show progress among different labor market indicators during this recovery/expansion. The cycle is defined as starting in 2008;
                                                     current values are shown relative to the best and worst readings of this indicator during this cycle."),
                                                  plotOutput("US.LaborMarket.Dashboard", height="1000px")
+                                        ),
+                                        tabPanel("US Commercial Banks",
+                                                 htmlOutput("Banking.Dashboard")
                                         ),
                                         tabPanel("US Housing Market",
                                                  htmlOutput("Housing.Dashboard")
