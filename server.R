@@ -416,9 +416,11 @@ shinyServer(function(input, output, session) {
   
   # Monetary Policy ####
   
-output$FOMC.Current <- renderText({ return(FOMC.Text ) })
-output$FOMC.WordCloud <- renderImage( { list(src="US.FOMC.Text.png") }, deleteFile = FALSE)
-  
+output$FOMC.Current <- renderText({ 
+  if (!input$ShowFOMCMinutes) return(FOMC.Text ) else return(FOMC.Minutes.Text ) })
+output$FOMC.WordCloud         <- renderImage( { list(src="US.FOMC.Text.png") }, deleteFile = FALSE)
+output$FOMC.Minutes.WordCloud <- renderImage( { list(src="US.FOMC.Minutes.Text.png") }, deleteFile = FALSE)
+
 output$Charts.FOMC <- renderPlot( {
   par(mfrow=c(2,1))
   Chart.Title <- paste0( FRED.Codes[grep("US.Rates.1M.Treasury", FRED.Codes$InternalCode), "Description"], 

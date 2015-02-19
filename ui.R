@@ -43,11 +43,14 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                         tabPanel("US Monetary Policy",
                                                  sidebarLayout(
                                                    sidebarPanel(
-                                                     HTML("<b>FOMC Statement: Word Cloud</b>"),
-                                                     imageOutput("FOMC.WordCloud"),
+                                                     HTML("<b>Latest FOMC Statement: Word Cloud</b>"),
+                                                     imageOutput("FOMC.WordCloud"), 
+                                                     HTML("<b>FOMC Minutes: Word Cloud</b>"),
+                                                     imageOutput("FOMC.Minutes.WordCloud" ),
                                                      plotOutput("Charts.FOMC", height = "750px")
                                                    ),
                                                    mainPanel(
+                                                     checkboxInput("ShowFOMCMinutes", "Show Minutes", FALSE),
                                                      h3("Latest FOMC Monetary Policy Statement"),
                                                      htmlOutput("FOMC.Current")
                                                    ))),
@@ -68,7 +71,6 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
 these indicators are released monthly (and data revisions are small). <li>They are survey-based, and may thus exaggerate positive or negative sentiment.</ul><p>We have re-scaled the San Fransisco Fed Tech Pulse by multiplying it by 10. 
                                                       You can zoom into the charts using the scroll wheel of the mouse or using the date range selector underneath the chart."),
                                                  htmlOutput("US.ActivityMeasures.Dashboard")
-                                                 #plotOutput("US.ActivityMeasures.Change")
                                         ),
                                         tabPanel("US GDP: Longer-Term View",
                                                  htmlOutput("US.GDP.LongTerm")
@@ -84,15 +86,9 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                         ),
                                         tabPanel("US Housing Market",
                                                  htmlOutput("Housing.Dashboard")
-                                                 #                                                  h3("US Housing Market Indicators"),
-                                                 #                                                  checkboxInput("UIHousingDashboardHistoryControl", "Show More History", value=FALSE),
-                                                 #                                                  plotOutput("US.HousingMarket.Dashboard", height="1000px")
                                         ),
                                         tabPanel("US Vehicle Sales",
                                                  htmlOutput("VehiclesSales.Dashboard")
-                                                 #                                                  h3("US Vehicles Sales and Auto Market Indicators"),
-                                                 #                                                  checkboxInput("UIAutoDashboardHistoryControl", "Show More History", value=FALSE),
-                                                 #                                                  plotOutput("US.AutoMarket.Dashboard", height="1000px")
                                         )
                              ),
                              navbarMenu("Economic Forecasting",
@@ -101,7 +97,6 @@ these indicators are released monthly (and data revisions are small). <li>They a
                                                    sidebarPanel(
                                                      uiOutput("UI.Macro.Control"),
                                                      uiOutput("UI.Variable.Control")
-                                                     #checkboxInput("RegressionXREGControlChoice", "Add additional regressors", FALSE)
                                                    ),
                                                    mainPanel(
                                                      HTML("<h3>Time Series Forecasting: Comparison of Different Approaches</h3>"),
