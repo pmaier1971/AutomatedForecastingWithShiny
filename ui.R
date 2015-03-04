@@ -132,7 +132,10 @@ these indicators are released monthly (and data revisions are small). <li>They a
 indicates the data; the table shows the additional details of the data release. Both chart and table are updated automatically as new information becomes available.<p>"),
                                                                       plotOutput("EnsembleForecast.Tracking"),
                                                                       verbatimTextOutput("Forecast.Tracking"))
-                                                   )))
+                                                   ))),
+                                        tabPanel("VAR Model of the US Economy",
+                                                 htmlOutput("US.VARmodel.Dashboard")
+                                        )
                              ),
                              tabPanel("Stock Market",
                                       sidebarLayout(
