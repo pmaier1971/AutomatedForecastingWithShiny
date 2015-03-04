@@ -1141,6 +1141,12 @@ output$US.GDP.LongTerm <- renderText({US.GDP.HTML})
          labels=Chart.Data[,2], cex=0.75, srt=-15)
   })
   
+  
+US.VARmodel.HTML <- GET(url="https://www.dropbox.com/s/gslykrik1mzf395/US_VAR.html?dl=0")
+US.VARmodel.HTML <-content(US.VARmodel.HTML, as="text")
+output$US.VARmodel.Dashboard <- renderText({US.VARmodel.HTML})
+  
+  
   # STOCK MARKET####
   
   
