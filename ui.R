@@ -21,7 +21,8 @@ shinyUI(fluidPage(#theme = "bootstrap3.css",
                                                Charts show naive time-series forecasts for the next 4 quarters. All data shown as q/q growth rates (annualized).<p>Note: This page will take a few seconds to update the data."),
                                           plotOutput("Overview.Charts"),
                                           htmlOutput("UI.Date")
-                                          ))),
+                                          ))
+                                      ),
                              navbarMenu("What's New?",
                                         tabPanel("Latest On Twitter",
                                                  HTML(TwitterString)
